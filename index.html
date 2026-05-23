@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="es" id="htmlRoot">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM Inmobiliario</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- ============================================================
+         ESTILOS - Sección 1: Variables de tema (theme.css)
+         ============================================================ -->
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --primary-light: #dbeafe;
+            --bg-body: #f1f5f9;
+            --bg-card: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --radius: 12px;
+            --sidebar-w: 260px;
+            --sidebar-collapsed: 70px;
+            --font-size: 16px;
+        }
+
+        /* ============================================================
+           ESTILOS - Sección 2: Base y utilidades (base.css)
+           ============================================================ */
+        * { font-family: 'Inter', sans-serif; margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-size: var(--font-size);
+            background: var(--bg-body);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; animation: fadeUp 0.25s ease; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .scrollbar-thin::-webkit-scrollbar { width: 5px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 10px; }
+
+        /* ============================================================
+           ESTILOS - Sección 3: Layout (layout.css)
+           ============================================================ */
+        .sidebar {
+            width: var(--sidebar-w);
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            transition: width 0.25s ease;
+        }
+        .sidebar.collapsed { width: var(--sidebar-collapsed); }
+        .sidebar.collapsed .nav-text,
+        .sidebar.collapsed .logo-text,
+        .sidebar.collapsed .user-info { display: none; }
+        .sidebar.collapsed .nav-item { justify-content: center; padding: 12px; }
+
+        .main-wrap { margin-left: var(--sidebar-w); transition: margin-left 0.25s ease; }
+        .main-wrap.expanded { margin-left: var(--sidebar-collapsed); }
+
+        /* ============================================================
+           ESTILOS - Sección 4: Componentes (components.css)
+           ============================================================ */
+
+        /* Botones temáticos */
+        .btn-primary {
+            background: var(--primary); color: white; border: none;
+            transition: background 0.15s;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        .btn-outline {
+            background: transparent; border: 1.5px solid var(--border);
+            color: var(--text-secondary); transition: all 0.15s;
+        }
+        .btn-outline:hover { background: var(--bg-body); }
+
+        .input-field {
+            background: var(--bg-body); border: 1.5px solid var(--border);
+            color: var(--text-primary); transition: border-color 0.15s;
+        }
+        .input-field:focus { outline: none; border-color: var(--primary); }
+
+        .select-field {
+            background: var(--bg-card); border: 1.5px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        /* Nav links */
+        .nav-link {
+            color: var(--text-primary);
+            transition: all 0.15s;
+        }
+        .nav-link:hover { background: var(--primary-light); color: var(--primary); }
+        .nav-link.active { background: var(--primary-light); color: var(--primary); }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        /* Imágenes de propiedades */
+        .prop-img-box {
+            width: 100%; height: 200px; overflow: hidden; position: relative;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .prop-img-box img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+
+        .prop-thumb {
+            width: 64px; height: 48px; object-fit: cover; border-radius: 8px; flex-shrink: 0;
+        }
+
+        /* Avatares */
+        .avatar-sm { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
+        .avatar-md { width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0; object-fit: cover; }
+
+        /* Kanban */
+        .kanban-col { min-height: 350px; }
+        .kanban-card { cursor: grab; transition: box-shadow 0.15s, transform 0.15s; }
+        .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .kanban-card.dragging { opacity: 0.5; transform: rotate(2deg); }
+        .kanban-zone.drag-over { background: var(--primary-light); border-color: var(--primary); }
+
+        /* Stats */
+        .stat-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+
+        /* Tabla */
+        .table-row:hover { background: var(--primary-light); }
+
+        /* Modales */
+        .modal-bg { display: none; }
+        .modal-bg.active { display: flex; }
+
+        /* Theme panel */
+        .theme-panel {
+            position: fixed; right: -400px; top: 0; width: 360px; height: 100vh;
+            background: var(--bg-card); border-left: 1px solid var(--border);
+            z-index: 100; transition: right 0.25s ease; overflow-y: auto;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+        }
+        .theme-panel.open { right: 0; }
+        .theme-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 99; }
+        .theme-overlay.open { display: block; }
+
+        .swatch {
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+            border: 3px solid transparent; transition: transform 0.15s, border-color 0.15s;
+        }
+        .swatch:hover { transform: scale(1.15); }
+        .swatch.active { border-color: var(--text-primary); box-shadow: 0 0 0 2px var(--bg-card); }
+
+        .chart-box { position: relative; height: 280px; }
+
+        /* ============================================================
+           ESTILOS - Sección 5: Dark mode overrides (dark.css)
+           ============================================================ */
+        body.dark-mode .kanban-col { background: #1e293b !important; }
+        body.dark-mode .kanban-card { background: #334155 !important; border-color: #475569 !important; }
+    </style>
+</head>
+<body>
+    <div class="flex h-screen">
+
+        <!-- ============================================================
+             LAYOUT - Sidebar (sidebar.html)
+             ============================================================ -->
+        <aside id="sidebar" class="sidebar flex flex-col h-screen fixed left-0 top-0 z-30">
+            <div class="flex items-center gap-3 px-5 py-4 border-b" style="border-color: var(--border);">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center" style="background: var(--primary);">
+                    <i class="fas fa-building text-white text-sm"></i>
+                </div>
+                <span class="logo-text font-bold text-lg" style="color: var(--text-primary);">CRM Inmobiliario</span>
+            </div>
+
+            <nav class="flex-1 py-3 px-2 overflow-y-auto scrollbar-thin">
+                <div class="nav-text text-xs font-semibold uppercase tracking-wider px-3 mb-2" style="color: var(--text-muted);">Principal</div>
+                <a href="#" onclick="goTo('dashboard')" class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="dashboard">
+                    <i class="fas fa-chart-pie w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Dashboard</span>
+                </a>
+                <a href="#" onclick="goTo('pipeline')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="pipeline">
+                    <i class="fas fa-columns w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Pipeline</span>
+                    <span class="nav-text ml-auto text-xs px-2 py-0.5 rounded-full font-medium" style="background: var(--primary-light); color: var(--primary);">12</span>
+                </a>
+                <a href="#" onclick="goTo('propiedades')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="propiedades">
+                    <i class="fas fa-home w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Propiedades</span>
+                </a>
+                <a href="#" onclick="goTo('clientes')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="clientes">
+                    <i class="fas fa-users w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Clientes</span>
+                </a>
+
+                <div class="nav-text text-xs font-semibold uppercase tracking-wider px-3 mb-2 mt-4" style="color: var(--text-muted);">Gestión</div>
+                <a href="#" onclick="goTo('actividades')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="actividades">
+                    <i class="fas fa-calendar-check w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Actividades</span>
+                    <span class="nav-text ml-auto bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">5</span>
+                </a>
+                <a href="#" onclick="goTo('contactos')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="contactos">
+                    <i class="fas fa-address-book w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Contactos</span>
+                </a>
+                <a href="#" onclick="goTo('reportes')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="reportes">
+                    <i class="fas fa-chart-bar w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Reportes</span>
+                </a>
+
+                <div class="nav-text text-xs font-semibold uppercase tracking-wider px-3 mb-2 mt-4" style="color: var(--text-muted);">Sistema</div>
+                <a href="#" onclick="goTo('config')" class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium" data-page="config">
+                    <i class="fas fa-cog w-5 text-center" style="color: var(--text-secondary);"></i>
+                    <span class="nav-text">Configuración</span>
+                </a>
+            </nav>
+
+            <div class="p-3 border-t" style="border-color: var(--border);">
+                <div class="flex items-center gap-3 px-3 py-2">
+                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff&size=32" class="w-8 h-8 rounded-full">
+                    <div class="user-info flex-1 min-w-0">
+                        <div class="text-sm font-medium truncate" style="color: var(--text-primary);">Admin User</div>
+                        <div class="text-xs truncate" style="color: var(--text-muted);">admin@crm.com</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ============================================================
+             LAYOUT - Main Content (main.html)
+             ============================================================ -->
+        <div id="mainWrap" class="main-wrap flex-1 flex flex-col h-screen overflow-hidden">
+
+            <!-- Header -->
+            <header class="flex items-center justify-between px-6 py-3 border-b flex-shrink-0" style="background: var(--bg-card); border-color: var(--border);">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="p-1.5 rounded-lg btn-outline"><i class="fas fa-bars"></i></button>
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-sm" style="color: var(--text-muted);"></i>
+                        <input type="text" placeholder="Buscar..." class="pl-9 pr-4 py-2 rounded-lg text-sm w-72 input-field">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="openModal('modalProperty')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+                        <i class="fas fa-plus"></i> Nueva Propiedad
+                    </button>
+                    <button class="relative p-2 rounded-lg btn-outline">
+                        <i class="fas fa-bell"></i>
+                        <span class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center" style="animation: pulse 2s infinite;">3</span>
+                    </button>
+                    <button onclick="toggleThemePanel()" class="p-2 rounded-lg btn-outline"><i class="fas fa-palette"></i></button>
+                </div>
+            </header>
+
+            <!-- Pages Container -->
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-6">
+
+                <!-- PAGE: Dashboard -->
+                <div id="pg-dashboard" class="page active">
+                    <div class="mb-6">
+                        <h1 class="text-2xl font-bold" style="color: var(--text-primary);">Dashboard</h1>
+                        <p class="text-sm mt-1" style="color: var(--text-secondary);">Resumen de tu actividad</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div class="stat-card card p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: var(--primary-light);"><i class="fas fa-home" style="color: var(--primary);"></i></div>
+                                <span class="text-green-500 text-sm font-medium"><i class="fas fa-arrow-up mr-1"></i>12%</span>
+                            </div>
+                            <div class="text-2xl font-bold" style="color: var(--text-primary);">248</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">Propiedades activas</div>
+                        </div>
+                        <div class="stat-card card p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"><i class="fas fa-users text-green-600"></i></div>
+                                <span class="text-green-500 text-sm font-medium"><i class="fas fa-arrow-up mr-1"></i>8%</span>
+                            </div>
+                            <div class="text-2xl font-bold" style="color: var(--text-primary);">1,432</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">Clientes</div>
+                        </div>
+                        <div class="stat-card card p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center"><i class="fas fa-handshake text-purple-600"></i></div>
+                                <span class="text-green-500 text-sm font-medium"><i class="fas fa-arrow-up mr-1"></i>23%</span>
+                            </div>
+                            <div class="text-2xl font-bold" style="color: var(--text-primary);">67</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">Operaciones cerradas</div>
+                        </div>
+                        <div class="stat-card card p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center"><i class="fas fa-dollar-sign text-orange-600"></i></div>
+                                <span class="text-green-500 text-sm font-medium"><i class="fas fa-arrow-up mr-1"></i>18%</span>
+                            </div>
+                            <div class="text-2xl font-bold" style="color: var(--text-primary);">$4.2M</div>
+                            <div class="text-sm" style="color: var(--text-secondary);">Volumen en venta</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Ventas Mensuales</h3>
+                            <div class="chart-box"><canvas id="chartSales"></canvas></div>
+                        </div>
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Distribución por Tipo</h3>
+                            <div class="chart-box"><canvas id="chartType"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold" style="color: var(--text-primary);">Pipeline</h3>
+                                <a href="#" onclick="goTo('pipeline')" class="text-sm hover:underline" style="color: var(--primary);">Ver completo →</a>
+                            </div>
+                            <div class="space-y-3">
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Primer Contacto</span><span class="font-medium" style="color: var(--text-primary);">12</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-gray-400 h-2 rounded-full" style="width:60%"></div></div></div>
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Negociación</span><span class="font-medium" style="color: var(--text-primary);">8</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-blue-400 h-2 rounded-full" style="width:40%"></div></div></div>
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Visitas</span><span class="font-medium" style="color: var(--text-primary);">15</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-yellow-400 h-2 rounded-full" style="width:75%"></div></div></div>
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Ofertas</span><span class="font-medium" style="color: var(--text-primary);">5</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-green-400 h-2 rounded-full" style="width:25%"></div></div></div>
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Cierre</span><span class="font-medium" style="color: var(--text-primary);">27</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-purple-500 h-2 rounded-full" style="width:85%"></div></div></div>
+                            </div>
+                        </div>
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Actividad Reciente</h3>
+                            <div class="space-y-3 max-h-72 overflow-y-auto scrollbar-thin">
+                                <div class="flex items-start gap-2"><div class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm" style="color: var(--text-primary);"><strong>Carlos M.</strong> agendó visita</p><p class="text-xs" style="color: var(--text-muted);">Hace 15 min</p></div></div>
+                                <div class="flex items-start gap-2"><div class="w-2 h-2 bg-green-500 rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm" style="color: var(--text-primary);"><strong>Oferta aceptada</strong> Casa Nordelta</p><p class="text-xs" style="color: var(--text-muted);">Hace 1h</p></div></div>
+                                <div class="flex items-start gap-2"><div class="w-2 h-2 bg-purple-500 rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm" style="color: var(--text-primary);"><strong>Nueva propiedad</strong> publicada</p><p class="text-xs" style="color: var(--text-muted);">Hace 2h</p></div></div>
+                                <div class="flex items-start gap-2"><div class="w-2 h-2 bg-yellow-500 rounded-full mt-1.5 flex-shrink-0"></div><div><p class="text-sm" style="color: var(--text-primary);"><strong>María L.</strong> → Negociación</p><p class="text-xs" style="color: var(--text-muted);">Hace 3h</p></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: Pipeline -->
+                <div id="pg-pipeline" class="page">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <div><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Pipeline</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Arrastrá las tarjetas entre columnas</p></div>
+                        <div class="flex gap-2">
+                            <select class="select-field rounded-lg px-3 py-2 text-sm"><option>Todas</option><option>Venta</option><option>Alquiler</option></select>
+                            <button onclick="openModal('modalLead')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><i class="fas fa-plus"></i> Nuevo Lead</button>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 overflow-x-auto pb-4">
+                        <div class="flex-shrink-0 w-72">
+                            <div class="rounded-xl p-3 mb-3 flex justify-between items-center" style="background: var(--bg-body);">
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-gray-400 rounded-full"></div><span class="font-semibold text-sm" style="color: var(--text-primary);">Contacto</span></div>
+                                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background: var(--border); color: var(--text-secondary);">2</span>
+                            </div>
+                            <div class="kanban-zone kanban-col space-y-3 rounded-xl p-3" style="background: var(--bg-body); border: 2px dashed var(--border);" id="zone-contacto" ondragover="dragOver(event)" ondrop="dropCard(event,'contacto')">
+                                <div class="kanban-card card p-4" draggable="true" ondragstart="dragStart(event)" id="card-1" data-status="contacto">
+                                    <div class="flex justify-between mb-2"><span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Venta</span><i class="fas fa-ellipsis-h text-gray-400 cursor-pointer"></i></div>
+                                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">Carlos Méndez</h4>
+                                    <p class="text-xs mt-1" style="color: var(--text-secondary);">Dept. 3amb - Belgrano</p>
+                                    <div class="flex justify-between mt-3 pt-3 border-t" style="border-color: var(--border);"><span class="text-xs" style="color: var(--text-secondary);">$185,000</span><span class="text-xs" style="color: var(--text-muted);">Hace 2h</span></div>
+                                </div>
+                                <div class="kanban-card card p-4" draggable="true" ondragstart="dragStart(event)" id="card-2" data-status="contacto">
+                                    <div class="flex justify-between mb-2"><span class="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium">Alquiler</span><i class="fas fa-ellipsis-h text-gray-400 cursor-pointer"></i></div>
+                                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">Laura Fernández</h4>
+                                    <p class="text-xs mt-1" style="color: var(--text-secondary);">Monoambiente - Palermo</p>
+                                    <div class="flex justify-between mt-3 pt-3 border-t" style="border-color: var(--border);"><span class="text-xs" style="color: var(--text-secondary);">$45,000/mes</span><span class="text-xs" style="color: var(--text-muted);">Hace 5h</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 w-72">
+                            <div class="rounded-xl p-3 mb-3 flex justify-between items-center" style="background: var(--bg-body);">
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-blue-500 rounded-full"></div><span class="font-semibold text-sm" style="color: var(--text-primary);">Negociación</span></div>
+                                <span class="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full font-medium">1</span>
+                            </div>
+                            <div class="kanban-zone kanban-col space-y-3 rounded-xl p-3" style="background: var(--bg-body); border: 2px dashed var(--border);" id="zone-negociacion" ondragover="dragOver(event)" ondrop="dropCard(event,'negociacion')">
+                                <div class="kanban-card card p-4" draggable="true" ondragstart="dragStart(event)" id="card-3" data-status="negociacion">
+                                    <div class="flex justify-between mb-2"><span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Venta</span><i class="fas fa-ellipsis-h text-gray-400 cursor-pointer"></i></div>
+                                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">Martín Rodríguez</h4>
+                                    <p class="text-xs mt-1" style="color: var(--text-secondary);">Casa 4amb - Nordelta</p>
+                                    <div class="flex justify-between mt-3 pt-3 border-t" style="border-color: var(--border);"><span class="text-xs" style="color: var(--text-secondary);">$520,000</span><span class="text-xs" style="color: var(--text-muted);">Hace 1d</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 w-72">
+                            <div class="rounded-xl p-3 mb-3 flex justify-between items-center" style="background: var(--bg-body);">
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-yellow-500 rounded-full"></div><span class="font-semibold text-sm" style="color: var(--text-primary);">Visita</span></div>
+                                <span class="bg-yellow-100 text-yellow-600 text-xs px-2 py-0.5 rounded-full font-medium">1</span>
+                            </div>
+                            <div class="kanban-zone kanban-col space-y-3 rounded-xl p-3" style="background: var(--bg-body); border: 2px dashed var(--border);" id="zone-visita" ondragover="dragOver(event)" ondrop="dropCard(event,'visita')">
+                                <div class="kanban-card card p-4" draggable="true" ondragstart="dragStart(event)" id="card-4" data-status="visita">
+                                    <div class="flex justify-between mb-2"><span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Venta</span><i class="fas fa-ellipsis-h text-gray-400 cursor-pointer"></i></div>
+                                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">Sofía Martínez</h4>
+                                    <p class="text-xs mt-1" style="color: var(--text-secondary);">PH 3amb - Recoleta</p>
+                                    <div class="text-xs mt-2 flex items-center gap-1" style="color: var(--primary);"><i class="fas fa-calendar"></i> 22/05 - 15:00hs</div>
+                                    <div class="flex justify-between mt-3 pt-3 border-t" style="border-color: var(--border);"><span class="text-xs" style="color: var(--text-secondary);">$310,000</span><span class="text-xs" style="color: var(--text-muted);">Hace 2d</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 w-72">
+                            <div class="rounded-xl p-3 mb-3 flex justify-between items-center" style="background: var(--bg-body);">
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="font-semibold text-sm" style="color: var(--text-primary);">Oferta</span></div>
+                                <span class="bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full font-medium">1</span>
+                            </div>
+                            <div class="kanban-zone kanban-col space-y-3 rounded-xl p-3" style="background: var(--bg-body); border: 2px dashed var(--border);" id="zone-oferta" ondragover="dragOver(event)" ondrop="dropCard(event,'oferta')">
+                                <div class="kanban-card card p-4" draggable="true" ondragstart="dragStart(event)" id="card-5" data-status="oferta">
+                                    <div class="flex justify-between mb-2"><span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Venta</span><i class="fas fa-ellipsis-h text-gray-400 cursor-pointer"></i></div>
+                                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">Valentina López</h4>
+                                    <p class="text-xs mt-1" style="color: var(--text-secondary);">Casa 5amb - San Isidro</p>
+                                    <div class="mt-2 p-2 bg-green-50 rounded-lg text-xs text-green-700 font-medium">Oferta: $480,000</div>
+                                    <div class="flex justify-between mt-3 pt-3 border-t" style="border-color: var(--border);"><span class="text-xs" style="color: var(--text-secondary);">$520,000</span><span class="text-xs" style="color: var(--text-muted);">Hace 3d</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 w-72">
+                            <div class="rounded-xl p-3 mb-3 flex justify-between items-center" style="background: var(--bg-body);">
+                                <div class="flex items-center gap-2"><div class="w-3 h-3 bg-purple-500 rounded-full"></div><span class="font-semibold text-sm" style="color: var(--text-primary);">Cierre</span></div>
+                                <span class="bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full font-medium">1</span>
+                            </div>
+                            <div class="kanban-zone kanban-col space-y-3 rounded-xl p-3" style="background: var(--bg-body); border: 2px dashed var(--border);" id="zone-cierre" ondragover="dragOver(event)" ondrop="dropCard(event,'cierre')">
+                                <div class="kanban-card card p-4" draggable="true" ondragstart="dragStart(event)" id="card-6" data-status="cierre">
+                                    <div class="flex justify-between mb-2"><span class="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">Venta</span><i class="fas fa-ellipsis-h text-gray-400 cursor-pointer"></i></div>
+                                    <h4 class="font-medium text-sm" style="color: var(--text-primary);">Roberto Sánchez</h4>
+                                    <p class="text-xs mt-1" style="color: var(--text-secondary);">Dept. 4amb - Puerto Madero</p>
+                                    <div class="mt-2 p-2 bg-purple-50 rounded-lg text-xs text-purple-700 font-medium"><i class="fas fa-check-circle mr-1"></i>Cerrado</div>
+                                    <div class="flex justify-between mt-3 pt-3 border-t" style="border-color: var(--border);"><span class="text-xs" style="color: var(--text-secondary);">$250,000</span><span class="text-xs" style="color: var(--text-muted);">15/05</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: Propiedades -->
+                <div id="pg-propiedades" class="page">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <div><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Propiedades</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Gestión de inmuebles</p></div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <div class="flex rounded-lg p-1" style="background: var(--bg-body);">
+                                <button onclick="setView('grid')" id="btnGrid" class="px-3 py-1.5 rounded-md text-sm font-medium" style="background: var(--bg-card); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1);"><i class="fas fa-th-large"></i></button>
+                                <button onclick="setView('list')" id="btnList" class="px-3 py-1.5 rounded-md text-sm font-medium" style="color: var(--text-secondary);"><i class="fas fa-list"></i></button>
+                            </div>
+                            <select class="select-field rounded-lg px-3 py-2 text-sm"><option>Todas las zonas</option><option>Belgrano</option><option>Palermo</option><option>Recoleta</option></select>
+                            <button onclick="openModal('modalProperty')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><i class="fas fa-plus"></i> Nueva</button>
+                        </div>
+                    </div>
+
+                    <div id="viewGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Prop 1 -->
+                        <div class="property-card card overflow-hidden">
+                            <div class="prop-img-box">
+                                <img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&h=400&fit=crop" alt="Casa">
+                                <div class="absolute top-3 left-3 flex gap-2">
+                                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-md font-medium">Venta</span>
+                                    <span class="bg-blue-500 text-white text-xs px-2 py-1 rounded-md font-medium">Destacada</span>
+                                </div>
+                                <button class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500"><i class="far fa-heart"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-center gap-1 text-sm mb-1" style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i><span>Belgrano, CABA</span></div>
+                                <h3 class="font-semibold mb-2" style="color: var(--text-primary);">Casa Moderna con Jardín</h3>
+                                <div class="flex items-center gap-4 text-sm mb-3" style="color: var(--text-secondary);"><span><i class="fas fa-bed mr-1"></i>4</span><span><i class="fas fa-bath mr-1"></i>3</span><span><i class="fas fa-expand mr-1"></i>320 m²</span></div>
+                                <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                                    <span class="text-lg font-bold" style="color: var(--primary);">$485,000</span>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-lg btn-outline"><i class="fas fa-phone"></i></button>
+                                        <button class="p-2 rounded-lg bg-green-50 text-green-500"><i class="fab fa-whatsapp"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Prop 2 -->
+                        <div class="property-card card overflow-hidden">
+                            <div class="prop-img-box">
+                                <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop" alt="Depto">
+                                <div class="absolute top-3 left-3"><span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-md font-medium">Alquiler</span></div>
+                                <button class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500"><i class="far fa-heart"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-center gap-1 text-sm mb-1" style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i><span>Palermo, CABA</span></div>
+                                <h3 class="font-semibold mb-2" style="color: var(--text-primary);">Departamento Luminoso</h3>
+                                <div class="flex items-center gap-4 text-sm mb-3" style="color: var(--text-secondary);"><span><i class="fas fa-bed mr-1"></i>3</span><span><i class="fas fa-bath mr-1"></i>2</span><span><i class="fas fa-expand mr-1"></i>120 m²</span></div>
+                                <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                                    <span class="text-lg font-bold" style="color: var(--primary);">$85,000<span class="text-sm font-normal" style="color: var(--text-secondary);">/mes</span></span>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-lg btn-outline"><i class="fas fa-phone"></i></button>
+                                        <button class="p-2 rounded-lg bg-green-50 text-green-500"><i class="fab fa-whatsapp"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Prop 3 -->
+                        <div class="property-card card overflow-hidden">
+                            <div class="prop-img-box">
+                                <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&h=400&fit=crop" alt="Casa">
+                                <div class="absolute top-3 left-3"><span class="bg-green-500 text-white text-xs px-2 py-1 rounded-md font-medium">Venta</span></div>
+                                <button class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-red-500"><i class="fas fa-heart"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-center gap-1 text-sm mb-1" style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i><span>Nordelta, Tigre</span></div>
+                                <h3 class="font-semibold mb-2" style="color: var(--text-primary);">Casa en Country</h3>
+                                <div class="flex items-center gap-4 text-sm mb-3" style="color: var(--text-secondary);"><span><i class="fas fa-bed mr-1"></i>5</span><span><i class="fas fa-bath mr-1"></i>4</span><span><i class="fas fa-expand mr-1"></i>450 m²</span></div>
+                                <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                                    <span class="text-lg font-bold" style="color: var(--primary);">$620,000</span>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-lg btn-outline"><i class="fas fa-phone"></i></button>
+                                        <button class="p-2 rounded-lg bg-green-50 text-green-500"><i class="fab fa-whatsapp"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Prop 4 -->
+                        <div class="property-card card overflow-hidden">
+                            <div class="prop-img-box">
+                                <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&h=400&fit=crop" alt="Residencia">
+                                <div class="absolute top-3 left-3 flex gap-2">
+                                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-md font-medium">Venta</span>
+                                    <span class="bg-orange-500 text-white text-xs px-2 py-1 rounded-md font-medium">Premium</span>
+                                </div>
+                                <button class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500"><i class="far fa-heart"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-center gap-1 text-sm mb-1" style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i><span>San Isidro</span></div>
+                                <h3 class="font-semibold mb-2" style="color: var(--text-primary);">Residencia con Piscina</h3>
+                                <div class="flex items-center gap-4 text-sm mb-3" style="color: var(--text-secondary);"><span><i class="fas fa-bed mr-1"></i>6</span><span><i class="fas fa-bath mr-1"></i>5</span><span><i class="fas fa-expand mr-1"></i>580 m²</span></div>
+                                <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                                    <span class="text-lg font-bold" style="color: var(--primary);">$890,000</span>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-lg btn-outline"><i class="fas fa-phone"></i></button>
+                                        <button class="p-2 rounded-lg bg-green-50 text-green-500"><i class="fab fa-whatsapp"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Prop 5 -->
+                        <div class="property-card card overflow-hidden">
+                            <div class="prop-img-box">
+                                <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="PH">
+                                <div class="absolute top-3 left-3"><span class="bg-purple-500 text-white text-xs px-2 py-1 rounded-md font-medium">Alquiler</span></div>
+                                <button class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500"><i class="far fa-heart"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-center gap-1 text-sm mb-1" style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i><span>Recoleta, CABA</span></div>
+                                <h3 class="font-semibold mb-2" style="color: var(--text-primary);">PH Renovado</h3>
+                                <div class="flex items-center gap-4 text-sm mb-3" style="color: var(--text-secondary);"><span><i class="fas fa-bed mr-1"></i>3</span><span><i class="fas fa-bath mr-1"></i>2</span><span><i class="fas fa-expand mr-1"></i>150 m²</span></div>
+                                <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                                    <span class="text-lg font-bold" style="color: var(--primary);">$65,000<span class="text-sm font-normal" style="color: var(--text-secondary);">/mes</span></span>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-lg btn-outline"><i class="fas fa-phone"></i></button>
+                                        <button class="p-2 rounded-lg bg-green-50 text-green-500"><i class="fab fa-whatsapp"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Prop 6 -->
+                        <div class="property-card card overflow-hidden">
+                            <div class="prop-img-box">
+                                <img src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&h=400&fit=crop" alt="Depto">
+                                <div class="absolute top-3 left-3"><span class="bg-green-500 text-white text-xs px-2 py-1 rounded-md font-medium">Venta</span></div>
+                                <button class="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full flex items-center justify-center text-gray-500 hover:text-red-500"><i class="far fa-heart"></i></button>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex items-center gap-1 text-sm mb-1" style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt" style="color: var(--primary);"></i><span>Caballito, CABA</span></div>
+                                <h3 class="font-semibold mb-2" style="color: var(--text-primary);">Depto Familiar</h3>
+                                <div class="flex items-center gap-4 text-sm mb-3" style="color: var(--text-secondary);"><span><i class="fas fa-bed mr-1"></i>3</span><span><i class="fas fa-bath mr-1"></i>1</span><span><i class="fas fa-expand mr-1"></i>95 m²</span></div>
+                                <div class="flex items-center justify-between pt-3 border-t" style="border-color: var(--border);">
+                                    <span class="text-lg font-bold" style="color: var(--primary);">$165,000</span>
+                                    <div class="flex gap-2">
+                                        <button class="p-2 rounded-lg btn-outline"><i class="fas fa-phone"></i></button>
+                                        <button class="p-2 rounded-lg bg-green-50 text-green-500"><i class="fab fa-whatsapp"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="viewList" class="hidden card overflow-hidden">
+                        <table class="w-full">
+                            <thead class="border-b" style="background: var(--bg-body); border-color: var(--border);">
+                                <tr>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Propiedad</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Tipo</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Zona</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">m²</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Precio</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Estado</th>
+                                    <th class="text-right px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y" style="border-color: var(--border);">
+                                <tr class="table-row">
+                                    <td class="px-4 py-3"><div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=128&h=96&fit=crop" class="prop-thumb"><div><div class="font-medium text-sm" style="color: var(--text-primary);">Casa Moderna</div><div class="text-xs" style="color: var(--text-muted);">PROP-001</div></div></div></td>
+                                    <td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Casa</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Belgrano</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">320</td>
+                                    <td class="px-4 py-3 text-sm font-semibold" style="color: var(--primary);">$485,000</td>
+                                    <td class="px-4 py-3"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activa</span></td>
+                                    <td class="px-4 py-3 text-right"><button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                                <tr class="table-row">
+                                    <td class="px-4 py-3"><div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=128&h=96&fit=crop" class="prop-thumb"><div><div class="font-medium text-sm" style="color: var(--text-primary);">Depto Luminoso</div><div class="text-xs" style="color: var(--text-muted);">PROP-002</div></div></div></td>
+                                    <td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Depto</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Palermo</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">120</td>
+                                    <td class="px-4 py-3 text-sm font-semibold" style="color: var(--primary);">$85,000/mes</td>
+                                    <td class="px-4 py-3"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activa</span></td>
+                                    <td class="px-4 py-3 text-right"><button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                                <tr class="table-row">
+                                    <td class="px-4 py-3"><div class="flex items-center gap-3"><img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=128&h=96&fit=crop" class="prop-thumb"><div><div class="font-medium text-sm" style="color: var(--text-primary);">Casa Country</div><div class="text-xs" style="color: var(--text-muted);">PROP-003</div></div></div></td>
+                                    <td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Casa</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Nordelta</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">450</td>
+                                    <td class="px-4 py-3 text-sm font-semibold" style="color: var(--primary);">$620,000</td>
+                                    <td class="px-4 py-3"><span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-medium">Reservada</span></td>
+                                    <td class="px-4 py-3 text-right"><button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-eye"></i></button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PAGE: Clientes -->
+                <div id="pg-clientes" class="page">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <div><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Clientes</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Compradores e inquilinos</p></div>
+                        <button onclick="openModal('modalClient')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><i class="fas fa-plus"></i> Nuevo Cliente</button>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <div class="px-4 py-3 border-b flex items-center gap-3" style="border-color: var(--border);">
+                            <input type="text" placeholder="Buscar..." class="flex-1 px-3 py-2 rounded-lg text-sm input-field">
+                            <select class="select-field rounded-lg px-3 py-2 text-sm"><option>Todos</option><option>Activo</option><option>Negociación</option></select>
+                        </div>
+                        <table class="w-full">
+                            <thead class="border-b" style="background: var(--bg-body); border-color: var(--border);">
+                                <tr>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Cliente</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Teléfono</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Email</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Interés</th>
+                                    <th class="text-left px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);">Estado</th>
+                                    <th class="text-right px-4 py-3 text-xs font-semibold uppercase" style="color: var(--text-secondary);"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y" style="border-color: var(--border);">
+                                <tr class="table-row"><td class="px-4 py-3"><div class="flex items-center gap-3"><img src="https://ui-avatars.com/api/?name=Carlos+Mendez&background=3b82f6&color=fff&size=36" class="avatar-sm"><div><div class="font-medium text-sm" style="color: var(--text-primary);">Carlos Méndez</div><div class="text-xs" style="color: var(--text-muted);">15/01/2026</div></div></div></td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">+54 11 4567-8901</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">carlos@email.com</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Compra - 3amb</td><td class="px-4 py-3"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activo</span></td><td class="px-4 py-3 text-right"><button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-eye"></i></button></td></tr>
+                                <tr class="table-row"><td class="px-4 py-3"><div class="flex items-center gap-3"><img src="https://ui-avatars.com/api/?name=Laura+Fernandez&background=10b981&color=fff&size=36" class="avatar-sm"><div><div class="font-medium text-sm" style="color: var(--text-primary);">Laura Fernández</div><div class="text-xs" style="color: var(--text-muted);">22/02/2026</div></div></div></td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">+54 11 3456-7890</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">laura@email.com</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Alquiler</td><td class="px-4 py-3"><span class="bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full font-medium">Negociación</span></td><td class="px-4 py-3 text-right"><button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-eye"></i></button></td></tr>
+                                <tr class="table-row"><td class="px-4 py-3"><div class="flex items-center gap-3"><img src="https://ui-avatars.com/api/?name=Martin+Rodriguez&background=f59e0b&color=fff&size=36" class="avatar-sm"><div><div class="font-medium text-sm" style="color: var(--text-primary);">Martín Rodríguez</div><div class="text-xs" style="color: var(--text-muted);">10/03/2026</div></div></div></td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">+54 11 2345-6789</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">martin@email.com</td><td class="px-4 py-3 text-sm" style="color: var(--text-secondary);">Compra - Casa</td><td class="px-4 py-3"><span class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-medium">Activo</span></td><td class="px-4 py-3 text-right"><button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-eye"></i></button></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PAGE: Actividades -->
+                <div id="pg-actividades" class="page">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <div><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Actividades</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Calendario y seguimiento</p></div>
+                        <button onclick="openModal('modalActivity')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><i class="fas fa-plus"></i> Nueva Actividad</button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 card p-5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-semibold" style="color: var(--text-primary);">Mayo 2026</h3>
+                                <div class="flex items-center gap-2">
+                                    <button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-chevron-left"></i></button>
+                                    <span class="text-sm font-medium" style="color: var(--text-primary);">Semana 20-26</span>
+                                    <button class="p-1.5 rounded-lg btn-outline"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1 mb-2">
+                                <div class="text-center text-xs font-semibold" style="color: var(--text-muted);">L</div><div class="text-center text-xs font-semibold" style="color: var(--text-muted);">M</div><div class="text-center text-xs font-semibold" style="color: var(--text-muted);">X</div><div class="text-center text-xs font-semibold" style="color: var(--text-muted);">J</div><div class="text-center text-xs font-semibold" style="color: var(--text-muted);">V</div><div class="text-center text-xs font-semibold" style="color: var(--text-muted);">S</div><div class="text-center text-xs font-semibold" style="color: var(--text-muted);">D</div>
+                            </div>
+                            <div class="grid grid-cols-7 gap-1">
+                                <div class="p-2 text-center text-sm rounded-lg" style="color: var(--text-muted);">18</div><div class="p-2 text-center text-sm rounded-lg" style="color: var(--text-muted);">19</div><div class="p-2 text-center text-sm rounded-lg" style="background: var(--primary-light); color: var(--primary);">20</div><div class="p-2 text-center text-sm rounded-lg text-white font-semibold" style="background: var(--primary);">21</div><div class="p-2 text-center text-sm rounded-lg" style="color: var(--text-primary);">22</div><div class="p-2 text-center text-sm rounded-lg" style="color: var(--text-primary);">23</div><div class="p-2 text-center text-sm rounded-lg" style="color: var(--text-primary);">24</div>
+                            </div>
+                            <div class="mt-4 pt-4 border-t space-y-2" style="border-color: var(--border);">
+                                <h4 class="font-medium text-sm" style="color: var(--text-primary);">Hoy</h4>
+                                <div class="flex items-center gap-3 p-3 rounded-lg" style="background: #eff6ff; border: 1px solid #bfdbfe;"><div class="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></div><div class="flex-1"><div class="text-sm font-medium" style="color: var(--text-primary);">Visita - Belgrano</div><div class="text-xs" style="color: var(--text-secondary);">Carlos Méndez • 15:00hs</div></div><span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">Visita</span></div>
+                                <div class="flex items-center gap-3 p-3 rounded-lg" style="background: #f0fdf4; border: 1px solid #bbf7d0;"><div class="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div><div class="flex-1"><div class="text-sm font-medium" style="color: var(--text-primary);">Llamada seguimiento</div><div class="text-xs" style="color: var(--text-secondary);">Martín R. • 11:00hs</div></div><span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Llamada</span></div>
+                            </div>
+                        </div>
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Próximas</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-start gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fas fa-home text-blue-600 text-sm"></i></div><div><div class="text-sm font-medium" style="color: var(--text-primary);">Visita Nordelta</div><div class="text-xs" style="color: var(--text-secondary);">22/05 - 10:00hs</div></div></div>
+                                <div class="flex items-start gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fas fa-phone text-green-600 text-sm"></i></div><div><div class="text-sm font-medium" style="color: var(--text-primary);">Llamar a Sofía</div><div class="text-xs" style="color: var(--text-secondary);">22/05 - 14:00hs</div></div></div>
+                                <div class="flex items-start gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fas fa-file-contract text-purple-600 text-sm"></i></div><div><div class="text-sm font-medium" style="color: var(--text-primary);">Firma contrato</div><div class="text-xs" style="color: var(--text-secondary);">23/05 - 11:00hs</div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: Contactos -->
+                <div id="pg-contactos" class="page">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <div><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Contactos</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Base de datos</p></div>
+                        <button onclick="openModal('modalContact')" class="btn-primary px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"><i class="fas fa-plus"></i> Nuevo</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="card p-5 hover:border-blue-300 transition-colors cursor-pointer">
+                            <div class="flex items-start justify-between mb-3"><img src="https://ui-avatars.com/api/?name=Ana+Garcia&background=3b82f6&color=fff&size=48" class="avatar-md"><span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full font-medium">Agente</span></div>
+                            <h3 class="font-semibold" style="color: var(--text-primary);">Ana García</h3><p class="text-sm mt-1" style="color: var(--text-secondary);">+54 11 5555-0001</p><p class="text-sm" style="color: var(--text-secondary);">ana@crm.com</p>
+                            <div class="flex items-center gap-4 mt-3 pt-3 border-t text-sm" style="border-color: var(--border); color: var(--text-secondary);"><span><i class="fas fa-home mr-1"></i>45</span><span><i class="fas fa-users mr-1"></i>120</span></div>
+                        </div>
+                        <div class="card p-5 hover:border-blue-300 transition-colors cursor-pointer">
+                            <div class="flex items-start justify-between mb-3"><img src="https://ui-avatars.com/api/?name=Pedro+Ruiz&background=10b981&color=fff&size=48" class="avatar-md"><span class="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full font-medium">Agente</span></div>
+                            <h3 class="font-semibold" style="color: var(--text-primary);">Pedro Ruiz</h3><p class="text-sm mt-1" style="color: var(--text-secondary);">+54 11 5555-0002</p><p class="text-sm" style="color: var(--text-secondary);">pedro@crm.com</p>
+                            <div class="flex items-center gap-4 mt-3 pt-3 border-t text-sm" style="border-color: var(--border); color: var(--text-secondary);"><span><i class="fas fa-home mr-1"></i>38</span><span><i class="fas fa-users mr-1"></i>95</span></div>
+                        </div>
+                        <div class="card p-5 hover:border-blue-300 transition-colors cursor-pointer">
+                            <div class="flex items-start justify-between mb-3"><img src="https://ui-avatars.com/api/?name=Maria+Lopez&background=f59e0b&color=fff&size=48" class="avatar-md"><span class="bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full font-medium">Propietario</span></div>
+                            <h3 class="font-semibold" style="color: var(--text-primary);">María López</h3><p class="text-sm mt-1" style="color: var(--text-secondary);">+54 11 5555-0003</p><p class="text-sm" style="color: var(--text-secondary);">maria@email.com</p>
+                            <div class="flex items-center gap-4 mt-3 pt-3 border-t text-sm" style="border-color: var(--border); color: var(--text-secondary);"><span><i class="fas fa-home mr-1"></i>3</span><span><i class="fas fa-star mr-1"></i>VIP</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: Reportes -->
+                <div id="pg-reportes" class="page">
+                    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                        <div><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Reportes</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Análisis y métricas</p></div>
+                        <select class="select-field rounded-lg px-3 py-2 text-sm"><option>Último mes</option><option>Trimestre</option><option>Año</option></select>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <div class="card p-5"><h3 class="font-semibold mb-4" style="color: var(--text-primary);">Ingresos</h3><div class="chart-box"><canvas id="chartRevenue"></canvas></div></div>
+                        <div class="card p-5"><h3 class="font-semibold mb-4" style="color: var(--text-primary);">Conversiones</h3><div class="chart-box"><canvas id="chartConversion"></canvas></div></div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Top Agentes</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3"><span class="text-lg font-bold w-6" style="color: var(--text-muted);">1</span><img src="https://ui-avatars.com/api/?name=Ana+Garcia&background=3b82f6&color=fff&size=32" class="avatar-sm"><div class="flex-1"><div class="text-sm font-medium" style="color: var(--text-primary);">Ana García</div><div class="text-xs" style="color: var(--text-secondary);">23 ops</div></div><span class="text-sm font-semibold text-green-600">$185K</span></div>
+                                <div class="flex items-center gap-3"><span class="text-lg font-bold w-6" style="color: var(--text-muted);">2</span><img src="https://ui-avatars.com/api/?name=Pedro+Ruiz&background=10b981&color=fff&size=32" class="avatar-sm"><div class="flex-1"><div class="text-sm font-medium" style="color: var(--text-primary);">Pedro Ruiz</div><div class="text-xs" style="color: var(--text-secondary);">18 ops</div></div><span class="text-sm font-semibold text-green-600">$142K</span></div>
+                            </div>
+                        </div>
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Zonas</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between"><span class="text-sm" style="color: var(--text-secondary);">Belgrano</span><div class="flex items-center gap-2"><div class="w-32 rounded-full h-2" style="background: var(--bg-body);"><div class="bg-blue-500 h-2 rounded-full" style="width:85%"></div></div><span class="text-sm font-medium" style="color: var(--text-primary);">42</span></div></div>
+                                <div class="flex items-center justify-between"><span class="text-sm" style="color: var(--text-secondary);">Palermo</span><div class="flex items-center gap-2"><div class="w-32 rounded-full h-2" style="background: var(--bg-body);"><div class="bg-blue-500 h-2 rounded-full" style="width:72%"></div></div><span class="text-sm font-medium" style="color: var(--text-primary);">36</span></div></div>
+                                <div class="flex items-center justify-between"><span class="text-sm" style="color: var(--text-secondary);">Recoleta</span><div class="flex items-center gap-2"><div class="w-32 rounded-full h-2" style="background: var(--bg-body);"><div class="bg-blue-500 h-2 rounded-full" style="width:60%"></div></div><span class="text-sm font-medium" style="color: var(--text-primary);">30</span></div></div>
+                            </div>
+                        </div>
+                        <div class="card p-5">
+                            <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Fuentes</h3>
+                            <div class="space-y-3">
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Portales</span><span class="font-semibold" style="color: var(--text-primary);">45%</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-blue-500 h-2 rounded-full" style="width:45%"></div></div></div>
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Redes</span><span class="font-semibold" style="color: var(--text-primary);">28%</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-green-500 h-2 rounded-full" style="width:28%"></div></div></div>
+                                <div><div class="flex justify-between text-sm mb-1"><span style="color: var(--text-secondary);">Referidos</span><span class="font-semibold" style="color: var(--text-primary);">18%</span></div><div class="w-full rounded-full h-2" style="background: var(--bg-body);"><div class="bg-purple-500 h-2 rounded-full" style="width:18%"></div></div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAGE: Configuración -->
+                <div id="pg-config" class="page">
+                    <div class="mb-6"><h1 class="text-2xl font-bold" style="color: var(--text-primary);">Configuración</h1><p class="text-sm mt-1" style="color: var(--text-secondary);">Ajustes del sistema</p></div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="card p-6">
+                                <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Datos de la Inmobiliaria</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Nombre</label><input type="text" value="Inmobiliaria Premium" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">CUIT</label><input type="text" value="30-12345678-9" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Dirección</label><input type="text" value="Av. Santa Fe 1234" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Teléfono</label><input type="text" value="+54 11 4000-0000" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                                    <div class="md:col-span-2"><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Email</label><input type="email" value="info@crm.com" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                                </div>
+                                <div class="mt-4 flex justify-end"><button class="btn-primary px-4 py-2 rounded-lg text-sm font-medium">Guardar</button></div>
+                            </div>
+                            <div class="card p-6">
+                                <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Etapas del Pipeline</h3>
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-3 h-3 bg-gray-400 rounded-full"></div><span class="flex-1 text-sm font-medium" style="color: var(--text-primary);">Primer Contacto</span></div>
+                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-3 h-3 bg-blue-500 rounded-full"></div><span class="flex-1 text-sm font-medium" style="color: var(--text-primary);">Negociación</span></div>
+                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-3 h-3 bg-yellow-500 rounded-full"></div><span class="flex-1 text-sm font-medium" style="color: var(--text-primary);">Visita</span></div>
+                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-3 h-3 bg-green-500 rounded-full"></div><span class="flex-1 text-sm font-medium" style="color: var(--text-primary);">Oferta</span></div>
+                                    <div class="flex items-center gap-3 p-3 rounded-lg" style="background: var(--bg-body);"><div class="w-3 h-3 bg-purple-500 rounded-full"></div><span class="flex-1 text-sm font-medium" style="color: var(--text-primary);">Cierre</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="card p-6">
+                                <h3 class="font-semibold mb-4" style="color: var(--text-primary);">Notificaciones</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between"><span class="text-sm" style="color: var(--text-secondary);">Email de leads</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
+                                    <div class="flex items-center justify-between"><span class="text-sm" style="color: var(--text-secondary);">Recordatorio visitas</span><label class="relative inline-flex items-center cursor-pointer"><input type="checkbox" checked class="sr-only peer"><div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div></label></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LAYOUT - Theme Panel (theme-panel.html)
+         ============================================================ -->
+    <div id="themeOverlay" class="theme-overlay" onclick="toggleThemePanel()"></div>
+    <div id="themePanel" class="theme-panel">
+        <div class="flex items-center justify-between p-5 border-b" style="border-color: var(--border);">
+            <h2 class="text-lg font-bold" style="color: var(--text-primary);"><i class="fas fa-palette mr-2" style="color: var(--primary);"></i>Personalizar</h2>
+            <button onclick="toggleThemePanel()" class="p-1.5 rounded-lg btn-outline"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-5 space-y-6">
+            <div>
+                <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Color principal</label>
+                <div class="flex flex-wrap gap-2">
+                    <div class="swatch active" style="background:#3b82f6;" onclick="applyColor('#3b82f6','#2563eb','#dbeafe',this)"></div>
+                    <div class="swatch" style="background:#6366f1;" onclick="applyColor('#6366f1','#4f46e5','#e0e7ff',this)"></div>
+                    <div class="swatch" style="background:#8b5cf6;" onclick="applyColor('#8b5cf6','#7c3aed','#ede9fe',this)"></div>
+                    <div class="swatch" style="background:#ec4899;" onclick="applyColor('#ec4899','#db2777','#fce7f3',this)"></div>
+                    <div class="swatch" style="background:#ef4444;" onclick="applyColor('#ef4444','#dc2626','#fee2e2',this)"></div>
+                    <div class="swatch" style="background:#f97316;" onclick="applyColor('#f97316','#ea580c','#ffedd5',this)"></div>
+                    <div class="swatch" style="background:#10b981;" onclick="applyColor('#10b981','#059669','#d1fae5',this)"></div>
+                    <div class="swatch" style="background:#14b8a6;" onclick="applyColor('#14b8a6','#0d9488','#ccfbf1',this)"></div>
+                    <div class="swatch" style="background:#0ea5e9;" onclick="applyColor('#0ea5e9','#0284c7','#e0f2fe',this)"></div>
+                    <div class="swatch" style="background:#64748b;" onclick="applyColor('#64748b','#475569','#e2e8f0',this)"></div>
+                    <div class="swatch" style="background:#1e293b;" onclick="applyColor('#1e293b','#0f172a','#334155',this)"></div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Color personalizado</label>
+                <div class="flex items-center gap-3">
+                    <input type="color" id="customColor" value="#3b82f6" class="w-10 h-10 rounded-lg cursor-pointer border-2" style="border-color: var(--border);" onchange="applyCustom(this.value)">
+                    <span class="text-xs font-mono" id="hexLabel" style="color: var(--text-muted);">#3b82f6</span>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Fondo de la app</label>
+                <div class="flex flex-wrap gap-2">
+                    <div class="swatch active" style="background:#f1f5f9; border: 2px solid #cbd5e1;" onclick="applyBg('#f1f5f9',this)"></div>
+                    <div class="swatch" style="background:#f8fafc; border: 2px solid #e2e8f0;" onclick="applyBg('#f8fafc',this)"></div>
+                    <div class="swatch" style="background:#fefce8; border: 2px solid #fef08a;" onclick="applyBg('#fefce8',this)"></div>
+                    <div class="swatch" style="background:#f0fdf4; border: 2px solid #bbf7d0;" onclick="applyBg('#f0fdf4',this)"></div>
+                    <div class="swatch" style="background:#faf5ff; border: 2px solid #e9d5ff;" onclick="applyBg('#faf5ff',this)"></div>
+                    <div class="swatch" style="background:#0f172a; border: 2px solid #1e293b;" onclick="applyBg('#0f172a',this); applyDark(true)"></div>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Fuente</label>
+                <div class="flex gap-2">
+                    <button onclick="applyFont('14px')" class="px-3 py-1.5 rounded-lg btn-outline text-sm">A-</button>
+                    <button onclick="applyFont('16px')" class="px-3 py-1.5 rounded-lg btn-outline">A</button>
+                    <button onclick="applyFont('18px')" class="px-3 py-1.5 rounded-lg btn-outline text-lg">A+</button>
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-2" style="color: var(--text-primary);">Redondeo</label>
+                <input type="range" min="0" max="24" value="12" id="radiusRange" class="w-full" oninput="applyRadius(this.value)" style="accent-color: var(--primary);">
+                <div class="text-xs mt-1" style="color: var(--text-muted);"><span id="radiusLabel">12</span>px</div>
+            </div>
+            <div>
+                <label class="block text-sm font-semibold mb-3" style="color: var(--text-primary);">Temas rápidos</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="preset('pro')" class="px-3 py-2 rounded-lg btn-outline text-sm text-left"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:#3b82f6;"></div>Profesional</div></button>
+                    <button onclick="preset('dark')" class="px-3 py-2 rounded-lg btn-outline text-sm text-left"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:#0f172a;"></div>Oscuro</div></button>
+                    <button onclick="preset('warm')" class="px-3 py-2 rounded-lg btn-outline text-sm text-left"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:#f97316;"></div>Cálido</div></button>
+                    <button onclick="preset('nature')" class="px-3 py-2 rounded-lg btn-outline text-sm text-left"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:#10b981;"></div>Naturaleza</div></button>
+                    <button onclick="preset('elegant')" class="px-3 py-2 rounded-lg btn-outline text-sm text-left"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:#8b5cf6;"></div>Elegante</div></button>
+                    <button onclick="preset('minimal')" class="px-3 py-2 rounded-lg btn-outline text-sm text-left"><div class="flex items-center gap-2"><div class="w-4 h-4 rounded" style="background:#64748b;"></div>Minimal</div></button>
+                </div>
+            </div>
+            <button onclick="resetAll()" class="w-full px-4 py-2 rounded-lg btn-outline text-sm font-medium"><i class="fas fa-undo mr-2"></i>Restablecer</button>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LAYOUT - Modals (modals.html)
+         ============================================================ -->
+    <div id="modalProperty" class="modal-bg fixed inset-0 z-50 items-center justify-center" style="background: rgba(0,0,0,0.5);">
+        <div class="rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4" style="background: var(--bg-card);">
+            <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: var(--border);">
+                <h2 class="text-lg font-bold" style="color: var(--text-primary);">Nueva Propiedad</h2>
+                <button onclick="closeModal('modalProperty')" style="color: var(--text-muted);"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2"><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Título</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Operación</label><select class="w-full px-3 py-2 rounded-lg text-sm select-field"><option>Venta</option><option>Alquiler</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Tipo</label><select class="w-full px-3 py-2 rounded-lg text-sm select-field"><option>Casa</option><option>Departamento</option><option>PH</option><option>Terreno</option></select></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Precio</label><input type="number" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Zona</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Dirección</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Dormitorios</label><input type="number" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Baños</label><input type="number" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Superficie m²</label><input type="number" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div class="md:col-span-2"><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Descripción</label><textarea rows="3" class="w-full px-3 py-2 rounded-lg text-sm input-field resize-none"></textarea></div>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: var(--border);">
+                <button onclick="closeModal('modalProperty')" class="px-4 py-2 rounded-lg btn-outline text-sm font-medium">Cancelar</button>
+                <button onclick="closeModal('modalProperty')" class="btn-primary px-6 py-2 rounded-lg text-sm font-medium">Crear</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalClient" class="modal-bg fixed inset-0 z-50 items-center justify-center" style="background: rgba(0,0,0,0.5);">
+        <div class="rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto m-4" style="background: var(--bg-card);">
+            <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: var(--border);"><h2 class="text-lg font-bold" style="color: var(--text-primary);">Nuevo Cliente</h2><button onclick="closeModal('modalClient')" style="color: var(--text-muted);"><i class="fas fa-times text-lg"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Nombre</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Apellido</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                </div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Teléfono</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Email</label><input type="email" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Tipo</label><select class="w-full px-3 py-2 rounded-lg text-sm select-field"><option>Comprador</option><option>Inquilino</option><option>Propietario</option></select></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: var(--border);"><button onclick="closeModal('modalClient')" class="px-4 py-2 rounded-lg btn-outline text-sm font-medium">Cancelar</button><button onclick="closeModal('modalClient')" class="btn-primary px-6 py-2 rounded-lg text-sm font-medium">Crear</button></div>
+        </div>
+    </div>
+
+    <div id="modalLead" class="modal-bg fixed inset-0 z-50 items-center justify-center" style="background: rgba(0,0,0,0.5);">
+        <div class="rounded-2xl w-full max-w-lg m-4" style="background: var(--bg-card);">
+            <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: var(--border);"><h2 class="text-lg font-bold" style="color: var(--text-primary);">Nuevo Lead</h2><button onclick="closeModal('modalLead')" style="color: var(--text-muted);"><i class="fas fa-times text-lg"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Nombre</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                    <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Apellido</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                </div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Teléfono</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Email</label><input type="email" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Fuente</label><select class="w-full px-3 py-2 rounded-lg text-sm select-field"><option>Portal</option><option>Redes</option><option>Referido</option></select></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: var(--border);"><button onclick="closeModal('modalLead')" class="px-4 py-2 rounded-lg btn-outline text-sm font-medium">Cancelar</button><button onclick="closeModal('modalLead')" class="btn-primary px-6 py-2 rounded-lg text-sm font-medium">Crear</button></div>
+        </div>
+    </div>
+
+    <div id="modalActivity" class="modal-bg fixed inset-0 z-50 items-center justify-center" style="background: rgba(0,0,0,0.5);">
+        <div class="rounded-2xl w-full max-w-lg m-4" style="background: var(--bg-card);">
+            <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: var(--border);"><h2 class="text-lg font-bold" style="color: var(--text-primary);">Nueva Actividad</h2><button onclick="closeModal('modalActivity')" style="color: var(--text-muted);"><i class="fas fa-times text-lg"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Tipo</label><select class="w-full px-3 py-2 rounded-lg text-sm select-field"><option>Visita</option><option>Llamada</option><option>Reunión</option></select></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Título</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Fecha</label><input type="date" class="w-full px-3 py-2 rounded-lg text-sm select-field"></div><div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Hora</label><input type="time" class="w-full px-3 py-2 rounded-lg text-sm select-field"></div></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: var(--border);"><button onclick="closeModal('modalActivity')" class="px-4 py-2 rounded-lg btn-outline text-sm font-medium">Cancelar</button><button onclick="closeModal('modalActivity')" class="btn-primary px-6 py-2 rounded-lg text-sm font-medium">Crear</button></div>
+        </div>
+    </div>
+
+    <div id="modalContact" class="modal-bg fixed inset-0 z-50 items-center justify-center" style="background: rgba(0,0,0,0.5);">
+        <div class="rounded-2xl w-full max-w-lg m-4" style="background: var(--bg-card);">
+            <div class="flex items-center justify-between px-6 py-4 border-b" style="border-color: var(--border);"><h2 class="text-lg font-bold" style="color: var(--text-primary);">Nuevo Contacto</h2><button onclick="closeModal('modalContact')" style="color: var(--text-muted);"><i class="fas fa-times text-lg"></i></button></div>
+            <div class="p-6 space-y-4">
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Nombre</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Teléfono</label><input type="text" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Email</label><input type="email" class="w-full px-3 py-2 rounded-lg text-sm input-field"></div>
+                <div><label class="block text-sm font-medium mb-1" style="color: var(--text-primary);">Tipo</label><select class="w-full px-3 py-2 rounded-lg text-sm select-field"><option>Agente</option><option>Propietario</option><option>Proveedor</option></select></div>
+            </div>
+            <div class="flex items-center justify-end gap-3 px-6 py-4 border-t" style="border-color: var(--border);"><button onclick="closeModal('modalContact')" class="px-4 py-2 rounded-lg btn-outline text-sm font-medium">Cancelar</button><button onclick="closeModal('modalContact')" class="btn-primary px-6 py-2 rounded-lg text-sm font-medium">Crear</button></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         SCRIPTS - app.js (Navegación + UI)
+         ============================================================ -->
+    <script>
+        // Navegación
+        function goTo(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('pg-' + page).classList.add('active');
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            const active = document.querySelector(`.nav-link[data-page="${page}"]`);
+            if (active) active.classList.add('active');
+            if (page === 'dashboard') setTimeout(drawCharts, 50);
+            if (page === 'reportes') setTimeout(drawReports, 50);
+        }
+
+        // Sidebar
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('collapsed');
+            document.getElementById('mainWrap').classList.toggle('expanded');
+        }
+
+        // Modales
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        document.querySelectorAll('.modal-bg').forEach(m => {
+            m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('active'); });
+        });
+
+        // Vista propiedades
+        function setView(v) {
+            const g = document.getElementById('viewGrid');
+            const l = document.getElementById('viewList');
+            const bg = document.getElementById('btnGrid');
+            const bl = document.getElementById('btnList');
+            if (v === 'grid') {
+                g.classList.remove('hidden'); l.classList.add('hidden');
+                bg.style.background = 'var(--bg-card)'; bg.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; bg.style.color = 'var(--text-primary)';
+                bl.style.background = 'transparent'; bl.style.boxShadow = 'none'; bl.style.color = 'var(--text-secondary)';
+            } else {
+                g.classList.add('hidden'); l.classList.remove('hidden');
+                bl.style.background = 'var(--bg-card)'; bl.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)'; bl.style.color = 'var(--text-primary)';
+                bg.style.background = 'transparent'; bg.style.boxShadow = 'none'; bg.style.color = 'var(--text-secondary)';
+            }
+        }
+
+        // Theme Panel
+        function toggleThemePanel() {
+            document.getElementById('themePanel').classList.toggle('open');
+            document.getElementById('themeOverlay').classList.toggle('open');
+        }
+    </script>
+
+    <!-- ============================================================
+         SCRIPTS - kanban.js (Drag & Drop)
+         ============================================================ -->
+    <script>
+        let dragItem = null;
+        function dragStart(e) { dragItem = e.target.closest('.kanban-card'); dragItem.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
+        function dragOver(e) { e.preventDefault(); const z = e.target.closest('.kanban-zone'); if (z) z.classList.add('drag-over'); }
+        function dropCard(e, status) {
+            e.preventDefault();
+            const z = e.target.closest('.kanban-zone');
+            if (z) z.classList.remove('drag-over');
+            if (dragItem) { dragItem.classList.remove('dragging'); dragItem.dataset.status = status; z.appendChild(dragItem); }
+            dragItem = null;
+        }
+        document.addEventListener('dragend', () => {
+            if (dragItem) dragItem.classList.remove('dragging');
+            document.querySelectorAll('.kanban-zone').forEach(z => z.classList.remove('drag-over'));
+        });
+    </script>
+
+    <!-- ============================================================
+         SCRIPTS - theme.js (Temas y colores)
+         ============================================================ -->
+    <script>
+        let charts = {};
+
+        function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+        function applyColor(p, pd, pl, el) {
+            document.documentElement.style.setProperty('--primary', p);
+            document.documentElement.style.setProperty('--primary-dark', pd);
+            document.documentElement.style.setProperty('--primary-light', pl);
+            document.querySelectorAll('#themePanel > div:last-child > div:first-child .swatch').forEach(s => s.classList.remove('active'));
+            if (el) el.classList.add('active');
+            document.getElementById('customColor').value = p;
+            document.getElementById('hexLabel').textContent = p;
+            refreshCharts();
+        }
+
+        function applyCustom(c) {
+            const darker = darken(c, 30);
+            const lighter = lighten(c, 40);
+            applyColor(c, darker, lighter, null);
+            document.querySelectorAll('#themePanel > div:last-child > div:first-child .swatch').forEach(s => s.classList.remove('active'));
+        }
+
+        function applyBg(c, el) {
+            document.documentElement.style.setProperty('--bg-body', c);
+            document.querySelectorAll('#themePanel > div:last-child > div:nth-child(3) .swatch').forEach(s => s.classList.remove('active'));
+            if (el) el.classList.add('active');
+            const dark = isDark(c);
+            if (dark) { document.documentElement.style.setProperty('--bg-card', '#1e293b'); document.documentElement.style.setProperty('--text-primary', '#e2e8f0'); document.documentElement.style.setProperty('--text-secondary', '#94a3b8'); document.documentElement.style.setProperty('--text-muted', '#64748b'); document.documentElement.style.setProperty('--border', '#334155'); }
+            refreshCharts();
+        }
+
+        function applyFont(s) { document.body.style.fontSize = s; }
+
+        function applyRadius(v) {
+            document.documentElement.style.setProperty('--radius', v + 'px');
+            document.getElementById('radiusLabel').textContent = v;
+            document.querySelectorAll('.card, .kanban-col, .stat-card').forEach(el => el.style.borderRadius = v + 'px');
+            document.querySelectorAll('.rounded-lg, .input-field, .select-field, .btn-outline, .btn-primary').forEach(el => el.style.borderRadius = Math.max(4, v - 4) + 'px');
+            document.querySelectorAll('.rounded-xl, .prop-img-box').forEach(el => el.style.borderRadius = v + 'px');
+            document.querySelectorAll('.rounded-2xl').forEach(el => el.style.borderRadius = (parseInt(v) + 4) + 'px');
+        }
+
+        function applyDark(v) {
+            if (v) {
+                document.documentElement.style.setProperty('--bg-card', '#1e293b');
+                document.documentElement.style.setProperty('--text-primary', '#e2e8f0');
+                document.documentElement.style.setProperty('--text-secondary', '#94a3b8');
+                document.documentElement.style.setProperty('--text-muted', '#64748b');
+                document.documentElement.style.setProperty('--border', '#334155');
+                document.body.classList.add('dark-mode');
+            }
+        }
+
+        function preset(name) {
+            const p = {
+                pro: { primary:'#3b82f6', pd:'#2563eb', pl:'#dbeafe', bg:'#f1f5f9', card:'#ffffff', tp:'#1e293b', ts:'#64748b', tm:'#94a3b8', b:'#e2e8f0', dark:false },
+                dark: { primary:'#60a5fa', pd:'#3b82f6', pl:'#1e3a5f', bg:'#0f172a', card:'#1e293b', tp:'#e2e8f0', ts:'#94a3b8', tm:'#64748b', b:'#334155', dark:true },
+                warm: { primary:'#f97316', pd:'#ea580c', pl:'#ffedd5', bg:'#fefce8', card:'#ffffff', tp:'#451a03', ts:'#92400e', tm:'#b45309', b:'#fed7aa', dark:false },
+                nature: { primary:'#10b981', pd:'#059669', pl:'#d1fae5', bg:'#f0fdf4', card:'#ffffff', tp:'#022c22', ts:'#065f46', tm:'#047857', b:'#a7f3d0', dark:false },
+                elegant: { primary:'#8b5cf6', pd:'#7c3aed', pl:'#ede9fe', bg:'#faf5ff', card:'#ffffff', tp:'#1e1b4b', ts:'#5b21b6', tm:'#7c3aed', b:'#ddd6fe', dark:false },
+                minimal: { primary:'#64748b', pd:'#475569', pl:'#e2e8f0', bg:'#f8fafc', card:'#ffffff', tp:'#0f172a', ts:'#475569', tm:'#94a3b8', b:'#e2e8f0', dark:false }
+            };
+            const t = p[name];
+            document.documentElement.style.setProperty('--primary', t.primary);
+            document.documentElement.style.setProperty('--primary-dark', t.pd);
+            document.documentElement.style.setProperty('--primary-light', t.pl);
+            document.documentElement.style.setProperty('--bg-body', t.bg);
+            document.documentElement.style.setProperty('--bg-card', t.card);
+            document.documentElement.style.setProperty('--text-primary', t.tp);
+            document.documentElement.style.setProperty('--text-secondary', t.ts);
+            document.documentElement.style.setProperty('--text-muted', t.tm);
+            document.documentElement.style.setProperty('--border', t.b);
+            if (t.dark) document.body.classList.add('dark-mode'); else document.body.classList.remove('dark-mode');
+            document.getElementById('customColor').value = t.primary;
+            document.getElementById('hexLabel').textContent = t.primary;
+            document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+            refreshCharts();
+        }
+
+        function resetAll() { preset('pro'); }
+
+        function darken(hex, amt) { let c = hex.replace('#',''); if(c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; let r=parseInt(c.substr(0,2),16)-amt, g=parseInt(c.substr(2,2),16)-amt, b=parseInt(c.substr(4,2),16)-amt; r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b)); return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+        function lighten(hex, amt) { let c = hex.replace('#',''); if(c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; let r=parseInt(c.substr(0,2),16)+amt, g=parseInt(c.substr(2,2),16)+amt, b=parseInt(c.substr(4,2),16)+amt; r=Math.max(0,Math.min(255,r)); g=Math.max(0,Math.min(255,g)); b=Math.max(0,Math.min(255,b)); return '#'+[r,g,b].map(x=>x.toString(16).padStart(2,'0')).join(''); }
+        function isDark(hex) { let c = hex.replace('#',''); if(c.length===3) c=c[0]+c[0]+c[1]+c[1]+c[2]+c[2]; let r=parseInt(c.substr(0,2),16), g=parseInt(c.substr(2,2),16), b=parseInt(c.substr(4,2),16); return (r*299+g*587+b*114)/1000 < 128; }
+    </script>
+
+    <!-- ============================================================
+         SCRIPTS - charts.js (Gráficos)
+         ============================================================ -->
+    <script>
+        function chartColors() {
+            return { primary: css('--primary'), primaryLight: css('--primary-light'), text: css('--text-secondary'), grid: css('--border') };
+        }
+
+        function drawCharts() {
+            const c = chartColors();
+            if (charts.sales) charts.sales.destroy();
+            if (charts.type) charts.type.destroy();
+
+            charts.sales = new Chart(document.getElementById('chartSales'), {
+                type: 'bar',
+                data: { labels: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'], datasets: [{ label: 'Ventas', data: [12,19,15,25,22,30,28,35,32,40,38,45], backgroundColor: c.primary + 'cc', borderRadius: 6, barThickness: 18 }, { label: 'Alquileres', data: [8,12,10,15,18,20,17,22,25,28,30,32], backgroundColor: '#10b981cc', borderRadius: 6, barThickness: 18 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 15, color: c.text } } }, scales: { y: { beginAtZero: true, grid: { color: c.grid }, ticks: { color: c.text } }, x: { grid: { display: false }, ticks: { color: c.text } } } }
+            });
+
+            charts.type = new Chart(document.getElementById('chartType'), {
+                type: 'doughnut',
+                data: { labels: ['Casas','Deptos','PHs','Terrenos','Comercial'], datasets: [{ data: [35,40,15,5,5], backgroundColor: ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'], borderWidth: 0, spacing: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 12, color: c.text } } }, cutout: '65%' }
+            });
+        }
+
+        function drawReports() {
+            const c = chartColors();
+            if (charts.revenue) charts.revenue.destroy();
+            if (charts.conversion) charts.conversion.destroy();
+
+            charts.revenue = new Chart(document.getElementById('chartRevenue'), {
+                type: 'line',
+                data: { labels: ['Ene','Feb','Mar','Abr','May','Jun'], datasets: [{ label: 'Comisiones', data: [45000,52000,48000,65000,72000,85000], borderColor: c.primary, backgroundColor: c.primary + '20', fill: true, tension: 0.4, pointBackgroundColor: c.primary, pointBorderColor: '#fff', pointBorderWidth: 2, pointRadius: 5 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: c.grid }, ticks: { color: c.text } }, x: { grid: { display: false }, ticks: { color: c.text } } } }
+            });
+
+            charts.conversion = new Chart(document.getElementById('chartConversion'), {
+                type: 'bar',
+                data: { labels: ['Contacto','Negociación','Visita','Oferta','Cierre'], datasets: [{ label: 'Leads', data: [120,85,55,30,27], backgroundColor: ['#9ca3af', c.primary, '#eab308', '#22c55e', '#a855f7'], borderRadius: 6, barThickness: 36 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: c.grid }, ticks: { color: c.text } }, x: { grid: { display: false }, ticks: { color: c.text } } } }
+            });
+        }
+
+        function refreshCharts() {
+            const active = document.querySelector('.page.active');
+            if (active && active.id === 'pg-dashboard') drawCharts();
+            if (active && active.id === 'pg-reportes') drawReports();
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => drawCharts());
+    </script>
+</body>
+</html>
+
