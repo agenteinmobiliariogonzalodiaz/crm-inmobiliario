@@ -608,136 +608,330 @@
     <!-- CONTENEDOR DE MODALES -->
     <!-- Modal: Agregar Propiedad -->
     <div id="modalProperty" class="modal-overlay">
-        <div class="modal-content w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col m-4">
-            <div class="h-14 flex items-center justify-between px-6 border-b border-[var(--border)] flex-shrink-0">
-                <h3 class="font-bold text-base uppercase tracking-wider text-[var(--primary)]" id="modalPropertyTitle">Cargar Nueva Propiedad</h3>
+        <div class="modal-content w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col m-4">
+            <div class="h-14 flex items-center justify-between px-6 border-b border-[var(--border)] flex-shrink-0 bg-[var(--bg-secondary)]">
+                <h3 class="font-bold text-base uppercase tracking-wider text-[var(--primary)]" id="modalPropertyTitle">📋 Cargar Nueva Propiedad</h3>
                 <button onclick="VALORA.view.closeModal('modalProperty')" class="text-[var(--text-muted)] hover:text-[var(--primary)]">
                     <i class="fas fa-times text-base"></i>
                 </button>
             </div>
             
-            <div class="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-6">
-                <!-- Secciones o Pestañas del Formulario -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Título de la Publicación</label>
-                        <input type="text" id="propTitle" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Depto 3 Ambientes con Balcón y Cochera">
+            <!-- Barra de Progreso y Auto-Guardado -->
+            <div class="px-6 py-3 border-b border-[var(--border)] bg-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs font-bold text-[var(--text-secondary)] uppercase">Progreso:</span>
+                    <div class="w-48 h-2 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
+                        <div id="propProgressBar" class="h-full bg-[var(--primary)] transition-all duration-300" style="width: 0%"></div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Tipo de Operación</label>
-                        <select id="propOp" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
-                            <option value="Venta">Venta</option>
-                            <option value="Alquiler">Alquiler</option>
-                            <option value="Alquiler Temporal">Alquiler Temporal</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Tipo de Inmueble</label>
-                        <select id="propType" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
-                            <option value="Departamento">Departamento</option>
-                            <option value="Casa">Casa</option>
-                            <option value="PH">PH</option>
-                            <option value="Terreno">Terreno</option>
-                            <option value="Oficina">Oficina</option>
-                            <option value="Local">Local</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Precio</label>
-                        <div class="flex gap-2">
-                            <select id="propCurrency" class="px-3 py-2.5 rounded-xl text-sm input-field w-24">
-                                <option value="USD">USD</option>
-                                <option value="ARS">ARS</option>
-                            </select>
-                            <input type="number" id="propPrice" class="flex-1 px-4 py-2.5 rounded-xl text-sm input-field" placeholder="180000">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Expensas (ARS)</label>
-                        <input type="number" id="propExpenses" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="0">
-                    </div>
-                    
-                    <div class="md:col-span-2">
-                        <hr class="border-[var(--border)] my-2">
-                        <h4 class="text-xs font-bold text-[var(--primary)] uppercase tracking-wider mb-3">Ubicación</h4>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Zona / Barrio</label>
-                        <input type="text" id="propZone" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Palermo Soho, Belgrano C, Recoleta">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Dirección (Calle y Altura)</label>
-                        <input type="text" id="propAddr" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Av. Santa Fe 3400">
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <hr class="border-[var(--border)] my-2">
-                        <h4 class="text-xs font-bold text-[var(--primary)] uppercase tracking-wider mb-3">Ambientes y Medidas</h4>
-                    </div>
-
-                    <div class="grid grid-cols-3 gap-2 md:col-span-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Ambientes</label>
-                            <input type="number" id="propRooms" class="w-full px-3 py-2.5 rounded-xl text-sm input-field" placeholder="3">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Dormitorios</label>
-                            <input type="number" id="propBeds" class="w-full px-3 py-2.5 rounded-xl text-sm input-field" placeholder="2">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Baños</label>
-                            <input type="number" id="propBaths" class="w-full px-3 py-2.5 rounded-xl text-sm input-field" placeholder="2">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-3 gap-2 md:col-span-2">
-                        <div>
-                            <label class="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Cocheras</label>
-                            <input type="number" id="propGarages" class="w-full px-3 py-2.5 rounded-xl text-sm input-field" value="0">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Sup. Total (m²)</label>
-                            <input type="number" id="propSurfaceTotal" class="w-full px-3 py-2.5 rounded-xl text-sm input-field" placeholder="85">
-                        </div>
-                        <div>
-                            <label class="block text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Sup. Cubierta (m²)</label>
-                            <input type="number" id="propSurfaceCovered" class="w-full px-3 py-2.5 rounded-xl text-sm input-field" placeholder="78">
-                        </div>
-                    </div>
-                    
-                    <div class="md:col-span-2">
-                        <hr class="border-[var(--border)] my-2">
-                        <h4 class="text-xs font-bold text-[var(--primary)] uppercase tracking-wider mb-3">Imágenes y Descripción</h4>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Imagen Principal (URL de Imagen)</label>
-                        <input type="url" id="propImageUrl" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="https://ejemplo.com/foto.jpg">
-                        <p class="text-[10px] text-[var(--text-muted)] mt-1">Por defecto se utilizará una imagen representativa de Unsplash si dejas este campo en blanco.</p>
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Descripción Detallada</label>
-                        <textarea id="propDesc" rows="4" class="w-full px-4 py-3 rounded-xl text-sm input-field resize-none" placeholder="Escribe aquí los detalles del inmueble, amenities, etc."></textarea>
-                    </div>
-
-                    <div class="md:col-span-2">
-                        <hr class="border-[var(--border)] my-2">
-                        <h4 class="text-xs font-bold text-[var(--primary)] uppercase tracking-wider mb-3">Datos Propietario (Uso Interno)</h4>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Nombre Propietario</label>
-                        <input type="text" id="propOwnerName" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Roberto Gómez">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Contacto (Tel/Email)</label>
-                        <input type="text" id="propOwnerContact" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: 11-4455-8899 / roberto@gmail.com">
-                    </div>
+                    <span id="propProgressText" class="text-xs font-mono text-[var(--primary)]">0%</span>
+                </div>
+                <div id="autoSaveIndicator" class="text-xs text-[var(--text-muted)] flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span> Listo para cargar
                 </div>
             </div>
             
-            <div class="h-16 flex items-center justify-end gap-3 px-6 border-t border-[var(--border)] flex-shrink-0">
-                <button onclick="VALORA.view.closeModal('modalProperty')" class="px-4 py-2 rounded-xl btn-outline text-xs font-bold uppercase tracking-wider">Cancelar</button>
-                <button id="savePropertySubmitBtn" class="btn-primary px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider">Guardar Propiedad</button>
+            <div class="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-4">
+                
+                <!-- SECCIÓN 1: DATOS GENERALES -->
+                <div class="border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div class="bg-[var(--bg-secondary)] px-4 py-3 cursor-pointer flex items-center justify-between" onclick="togglePropSection('sec-general', this)">
+                        <h4 class="font-bold text-sm text-[var(--primary)] uppercase tracking-wider">🏠 Datos Generales</h4>
+                        <i class="fas fa-chevron-down text-[var(--text-muted)] transition-transform" id="icon-sec-general"></i>
+                    </div>
+                    <div id="sec-general" class="p-4 space-y-4 bg-white">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Título del Anuncio *</label>
+                                <input type="text" id="propTitle" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Departamento luminoso en Palermo con balcón y cochera" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Código Interno</label>
+                                <input type="text" id="propCode" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: V-001, A-234">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Estado</label>
+                                <select id="propStatus" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo</option>
+                                    <option value="Reservado">Reservado</option>
+                                    <option value="Vendido/Alquilado">Vendido/Alquilado</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Tipo de Operación *</label>
+                                <select id="propOp" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" onchange="VALORA.logic.updateFormLogic()" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Venta">Venta</option>
+                                    <option value="Alquiler">Alquiler</option>
+                                    <option value="Alquiler Temporal">Alquiler Temporal</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Tipo de Inmueble *</label>
+                                <select id="propType" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" onchange="VALORA.logic.updateFormLogic()" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="Departamento">Departamento</option>
+                                    <option value="Casa">Casa</option>
+                                    <option value="PH">PH</option>
+                                    <option value="Terreno">Terreno / Lote</option>
+                                    <option value="Oficina">Oficina</option>
+                                    <option value="Local">Local Comercial</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Campos Condicionales: Alquiler Temporario -->
+                        <div id="temporalFields" class="hidden bg-yellow-50 border border-yellow-200 rounded-xl p-4 space-y-3">
+                            <h5 class="text-xs font-bold text-yellow-800 uppercase">📅 Detalles Temporada</h5>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Estadía Mínima (noches)</label>
+                                    <input type="number" id="tempMinStay" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: 3">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Mes de Entrada</label>
+                                    <input type="month" id="tempStartMonth" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 2: UBICACIÓN -->
+                <div class="border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div class="bg-[var(--bg-secondary)] px-4 py-3 cursor-pointer flex items-center justify-between" onclick="togglePropSection('sec-location', this)">
+                        <h4 class="font-bold text-sm text-[var(--primary)] uppercase tracking-wider">📍 Ubicación</h4>
+                        <i class="fas fa-chevron-down text-[var(--text-muted)] transition-transform" id="icon-sec-location"></i>
+                    </div>
+                    <div id="sec-location" class="p-4 space-y-4 bg-white hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Dirección *</label>
+                                <input type="text" id="propAddr" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Calle y altura" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Barrio / Zona</label>
+                                <input type="text" id="propZone" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Palermo Soho, Belgrano C">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Ciudad *</label>
+                                <input type="text" id="propCity" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: CABA, Córdoba Capital" required>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Provincia *</label>
+                                <input type="text" id="propProvince" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Coordenadas</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="propLat" class="flex-1 px-3 py-2.5 rounded-xl text-sm input-field" placeholder="Lat" readonly>
+                                    <input type="text" id="propLng" class="flex-1 px-3 py-2.5 rounded-xl text-sm input-field" placeholder="Lng" readonly>
+                                    <button type="button" class="px-3 py-2.5 rounded-xl bg-[var(--primary)] text-white hover:opacity-90" onclick="VALORA.logic.geoLocate()" title="Obtener ubicación actual">📍</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 3: CARACTERÍSTICAS -->
+                <div class="border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div class="bg-[var(--bg-secondary)] px-4 py-3 cursor-pointer flex items-center justify-between" onclick="togglePropSection('sec-features', this)">
+                        <h4 class="font-bold text-sm text-[var(--primary)] uppercase tracking-wider">🏡 Características</h4>
+                        <i class="fas fa-chevron-down text-[var(--text-muted)] transition-transform" id="icon-sec-features"></i>
+                    </div>
+                    <div id="sec-features" class="p-4 space-y-4 bg-white hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Superficie Total (m²) *</label>
+                                <input type="number" id="propSurfaceTotal" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" min="1" oninput="VALORA.logic.calculatePricePerMeter(); VALORA.logic.validateSurfaces()" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Superficie Cubierta (m²)</label>
+                                <input type="number" id="propSurfaceCovered" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" max="10000" oninput="VALORA.logic.validateSurfaces()">
+                                <small id="surfaceError" class="text-red-500 text-xs hidden">⚠ La cubierta no puede ser mayor a la total</small>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Antigüedad (años)</label>
+                                <input type="number" id="propAge" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: 10">
+                            </div>
+                        </div>
+                        
+                        <!-- Campos condicionales: No mostrar para Terrenos -->
+                        <div id="buildingFields" class="space-y-4">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Ambientes</label>
+                                    <input type="number" id="propRooms" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" min="1">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Dormitorios</label>
+                                    <input type="number" id="propBeds" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" min="0">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Baños</label>
+                                    <input type="number" id="propBaths" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" min="1">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Toilets</label>
+                                    <input type="number" id="propToilets" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" min="0">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Piso</label>
+                                    <input type="number" id="propFloor" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="0">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Unidad / Depto</label>
+                                    <input type="text" id="propUnit" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="A, B, 4to...">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Expensas</label>
+                                    <input type="number" id="propExpenses" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" step="0.01">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Moneda Exp.</label>
+                                    <select id="propExpensesCurrency" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
+                                        <option value="ARS">ARS</option>
+                                        <option value="USD">USD</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Cocheras</label>
+                                    <input type="number" id="propGarages" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" value="0">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Servicios (separar con comas)</label>
+                                    <input type="text" id="propAmenities" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="Ej: Piscina, Gimnasio, Seguridad, Balcon">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 4: DATOS ECONÓMICOS -->
+                <div class="border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div class="bg-[var(--bg-secondary)] px-4 py-3 cursor-pointer flex items-center justify-between" onclick="togglePropSection('sec-economic', this)">
+                        <h4 class="font-bold text-sm text-[var(--primary)] uppercase tracking-wider">💰 Datos Económicos</h4>
+                        <i class="fas fa-chevron-down text-[var(--text-muted)] transition-transform" id="icon-sec-economic"></i>
+                    </div>
+                    <div id="sec-economic" class="p-4 space-y-4 bg-white hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Precio *</label>
+                                <input type="number" id="propPrice" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" oninput="VALORA.logic.calculatePricePerMeter()" required>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Moneda</label>
+                                <select id="propCurrency" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
+                                    <option value="USD">USD</option>
+                                    <option value="ARS">ARS</option>
+                                    <option value="EUR">EUR</option>
+                                    <option value="BRL">BRL</option>
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <div class="w-full px-4 py-2.5 rounded-xl bg-green-50 border border-green-200">
+                                    <span class="text-xs font-bold text-green-800 uppercase">Precio x m²:</span>
+                                    <span id="pricePerMeterDisplay" class="text-lg font-mono font-bold text-green-700 ml-2">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="border-[var(--border)] my-4">
+                        
+                        <h5 class="text-xs font-bold text-[var(--secondary)] uppercase flex items-center gap-2">
+                            🔒 Datos Internos (No visibles al público)
+                        </h5>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Comisión Agencia (%)</label>
+                                <input type="number" id="propCommission" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" step="0.1" placeholder="Ej: 4">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Comisión Venta (%)</label>
+                                <input type="number" id="propSaleCommission" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" step="0.1">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Costo Publicidad</label>
+                                <input type="number" id="propAdCost" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" step="0.01">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Notas Privadas del Agente</label>
+                            <textarea id="propInternalNotes" class="w-full px-4 py-3 rounded-xl text-sm input-field resize-none" rows="2" placeholder="Datos del propietario, claves de ingreso, observaciones internas..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 5: MULTIMEDIA -->
+                <div class="border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div class="bg-[var(--bg-secondary)] px-4 py-3 cursor-pointer flex items-center justify-between" onclick="togglePropSection('sec-media', this)">
+                        <h4 class="font-bold text-sm text-[var(--primary)] uppercase tracking-wider">📷 Multimedia (Fotos y Video)</h4>
+                        <i class="fas fa-chevron-down text-[var(--text-muted)] transition-transform" id="icon-sec-media"></i>
+                    </div>
+                    <div id="sec-media" class="p-4 space-y-4 bg-white hidden">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Subir Fotos (Máx 25)</label>
+                            <div class="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors" onclick="document.getElementById('propPhotosInput').click()">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-[var(--text-muted)] mb-2"></i>
+                                <p class="text-sm text-[var(--text-secondary)]">Click para seleccionar o arrastra imágenes aquí</p>
+                                <input type="file" id="propPhotosInput" multiple accept="image/*" class="hidden" onchange="VALORA.logic.handlePhotoUpload(this)" disabled>
+                                <small class="text-xs text-[var(--text-muted)] block mt-2">Simulación: Se guardarán nombres de archivo o URLs externas.</small>
+                            </div>
+                            <div id="photoGalleryPreview" class="grid grid-cols-4 md:grid-cols-6 gap-2 mt-4"></div>
+                            <small id="photoCount" class="text-xs text-[var(--text-muted)] block mt-2">0 / 25 fotos</small>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">URL Video (YouTube/Vimeo)</label>
+                            <input type="url" id="propVideoUrl" class="w-full px-4 py-2.5 rounded-xl text-sm input-field" placeholder="https://youtube.com/watch?v=...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN 6: PUBLICACIÓN -->
+                <div class="border border-[var(--border)] rounded-xl overflow-hidden">
+                    <div class="bg-[var(--bg-secondary)] px-4 py-3 cursor-pointer flex items-center justify-between" onclick="togglePropSection('sec-publish', this)">
+                        <h4 class="font-bold text-sm text-[var(--primary)] uppercase tracking-wider">🚀 Publicación</h4>
+                        <i class="fas fa-chevron-down text-[var(--text-muted)] transition-transform" id="icon-sec-publish"></i>
+                    </div>
+                    <div id="sec-publish" class="p-4 space-y-4 bg-white hidden">
+                        <div>
+                            <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Descripción del Anuncio *</label>
+                            <textarea id="propDesc" class="w-full px-4 py-3 rounded-xl text-sm input-field resize-none" rows="5" oninput="document.getElementById('charCount').textContent = this.value.length" placeholder="Describa la propiedad destacando sus mejores características..." required></textarea>
+                            <div class="text-right mt-1">
+                                <span id="charCount" class="text-xs text-[var(--text-muted)]">0</span> caracteres
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Agente Responsable</label>
+                                <select id="propAgent" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
+                                    <option value="demo">Usuario Actual (demo)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Destacar en Web</label>
+                                <select id="propFeatured" class="w-full px-4 py-2.5 rounded-xl text-sm input-field">
+                                    <option value="false">No</option>
+                                    <option value="true">Sí</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="h-16 flex items-center justify-end gap-3 px-6 border-t border-[var(--border)] flex-shrink-0 bg-white">
+                <button onclick="VALORA.view.closeModal('modalProperty')" class="px-5 py-2.5 rounded-xl btn-outline text-xs font-bold uppercase tracking-wider">Cancelar</button>
+                <button id="savePropertySubmitBtn" class="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider shadow-lg">💾 Guardar Propiedad</button>
             </div>
         </div>
     </div>
@@ -1760,6 +1954,184 @@
                 if (act) {
                     alert(`Tarea: ${act.title}\nTipo: ${act.type}\nFecha: ${act.date} a las ${act.time}hs\nCliente: ${act.clientName}\nPropiedad: ${act.propertyTitle}\nEstado: ${act.done ? 'Completado' : 'Pendiente'}`);
                 }
+            }
+        };
+
+        // --- LÓGICA DE FORMULARIO DE PROPIEDADES (ESTILO TOKKO) ---
+        VALORA.logic = {
+            // Toggle secciones colapsables
+            togglePropSection(sectionId, headerEl) {
+                const content = document.getElementById(sectionId);
+                const icon = headerEl.querySelector('.toggle-icon');
+                
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('hidden');
+                    icon.className = 'toggle-icon fas fa-chevron-up transition-transform';
+                } else {
+                    content.classList.add('hidden');
+                    icon.className = 'toggle-icon fas fa-chevron-down transition-transform';
+                }
+            },
+
+            // Actualizar lógica condicional del formulario
+            updateFormLogic() {
+                const op = document.getElementById('propOp').value;
+                const type = document.getElementById('propType').value;
+                
+                // Mostrar sección Temporada solo para Alquiler Temporal
+                const temporadaSection = document.getElementById('sec-temporada');
+                if (op === 'Alquiler Temporal') {
+                    temporadaSection.classList.remove('hidden');
+                } else {
+                    temporadaSection.classList.add('hidden');
+                }
+                
+                // Ocultar campos de edificios para Terrenos
+                const buildingFields = ['propRooms', 'propBeds', 'propBaths', 'propGarages', 'propAntiquity', 'propFloor', 'propUnit'];
+                const isTerreno = type === 'Terreno';
+                
+                buildingFields.forEach(fieldId => {
+                    const field = document.getElementById(fieldId);
+                    if (field) {
+                        const formGroup = field.closest('.mb-4') || field.parentElement;
+                        if (isTerreno) {
+                            if (formGroup) formGroup.classList.add('hidden');
+                            field.disabled = true;
+                        } else {
+                            if (formGroup) formGroup.classList.remove('hidden');
+                            field.disabled = false;
+                        }
+                    }
+                });
+            },
+
+            // Calcular precio por m²
+            calculatePricePerMeter() {
+                const price = parseFloat(document.getElementById('propPrice').value) || 0;
+                const surface = parseFloat(document.getElementById('propSurfaceTotal').value) || 0;
+                const displayEl = document.getElementById('pricePerMeterDisplay');
+                
+                if (price > 0 && surface > 0) {
+                    const pricePerMeter = price / surface;
+                    const currency = document.getElementById('propCurrency').value;
+                    displayEl.textContent = `${currency} ${pricePerMeter.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}/m²`;
+                    displayEl.classList.remove('text-gray-400');
+                    displayEl.classList.add('text-[var(--primary)]', 'font-semibold');
+                } else {
+                    displayEl.textContent = 'Precio/m²: --';
+                    displayEl.classList.add('text-gray-400');
+                    displayEl.classList.remove('text-[var(--primary)]', 'font-semibold');
+                }
+            },
+
+            // Validar superficies
+            validateSurfaces() {
+                const totalInput = document.getElementById('propSurfaceTotal');
+                const coveredInput = document.getElementById('propSurfaceCovered');
+                const errorMsg = document.getElementById('surfaceValidationError');
+                
+                const total = parseFloat(totalInput.value) || 0;
+                const covered = parseFloat(coveredInput.value) || 0;
+                
+                if (covered > total && total > 0) {
+                    errorMsg.textContent = '⚠️ La superficie cubierta no puede ser mayor a la total';
+                    errorMsg.classList.remove('hidden');
+                    coveredInput.classList.add('border-red-500');
+                    return false;
+                } else {
+                    errorMsg.classList.add('hidden');
+                    coveredInput.classList.remove('border-red-500');
+                    return true;
+                }
+            },
+
+            // Geolocalización simplificada
+            geoLocate() {
+                const addrInput = document.getElementById('propAddr');
+                const zoneInput = document.getElementById('propZone');
+                
+                if (!navigator.geolocation) {
+                    alert('Geolocalización no soportada en este navegador.');
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude.toFixed(6);
+                        const lng = position.coords.longitude.toFixed(6);
+                        addrInput.value = `Lat: ${lat}, Lon: ${lng}`;
+                        VALORA.toast.show('Ubicación obtenida exitosamente', 'success');
+                    },
+                    () => {
+                        VALORA.toast.show('No se pudo obtener la ubicación. Verifica permisos.', 'error');
+                    }
+                );
+            },
+
+            // Manejo de subida de fotos múltiples
+            photoPreviewUrls: [],
+            
+            handlePhotoUpload(input) {
+                const files = Array.from(input.files);
+                const previewContainer = document.getElementById('photoPreviewContainer');
+                const maxPhotos = 25;
+                
+                if (this.photoPreviewUrls.length + files.length > maxPhotos) {
+                    alert(`Máximo ${maxPhotos} fotos permitidas.`);
+                    input.value = '';
+                    return;
+                }
+                
+                files.forEach((file, index) => {
+                    if (!file.type.startsWith('image/')) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.photoPreviewUrls.push(e.target.result);
+                        this.renderPhotoPreviews();
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                input.value = '';
+            },
+            
+            renderPhotoPreviews() {
+                const container = document.getElementById('photoPreviewContainer');
+                if (!container) return;
+                
+                if (this.photoPreviewUrls.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-400 italic">Sin fotos cargadas</p>';
+                    return;
+                }
+                
+                container.innerHTML = this.photoPreviewUrls.map((url, idx) => `
+                    <div class="relative group flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden border border-[var(--border)]">
+                        <img src="${url}" class="w-full h-full object-cover" alt="Foto ${idx + 1}">
+                        <button type="button" onclick="VALORA.logic.removePhoto(${idx})" 
+                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
+                            ${idx === 0 ? '★ Portada' : idx + 1}
+                        </div>
+                    </div>
+                `).join('');
+            },
+            
+            removePhoto(index) {
+                this.photoPreviewUrls.splice(index, 1);
+                this.renderPhotoPreviews();
+            },
+            
+            getPhotoUrls() {
+                return this.photoPreviewUrls.length > 0 ? this.photoPreviewUrls : [];
+            },
+            
+            clearPhotos() {
+                this.photoPreviewUrls = [];
+                const container = document.getElementById('photoPreviewContainer');
+                if (container) container.innerHTML = '<p class="text-sm text-gray-400 italic">Sin fotos cargadas</p>';
             }
         };
 
