@@ -882,10 +882,10 @@
                             <div class="border-2 border-dashed border-[var(--border)] rounded-xl p-8 text-center cursor-pointer hover:bg-[var(--bg-secondary)] transition-colors" onclick="document.getElementById('propPhotosInput').click()">
                                 <i class="fas fa-cloud-upload-alt text-3xl text-[var(--text-muted)] mb-2"></i>
                                 <p class="text-sm text-[var(--text-secondary)]">Click para seleccionar o arrastra imágenes aquí</p>
-                                <input type="file" id="propPhotosInput" multiple accept="image/*" class="hidden" onchange="VALORA.logic.handlePhotoUpload(this)" disabled>
-                                <small class="text-xs text-[var(--text-muted)] block mt-2">Simulación: Se guardarán nombres de archivo o URLs externas.</small>
+                                <input type="file" id="propPhotosInput" multiple accept="image/*" class="hidden" onchange="VALORA.logic.handlePhotoUpload(this)">
+                                <small class="text-xs text-[var(--text-muted)] block mt-2">Las fotos se previsualizan abajo. La primera será la portada.</small>
                             </div>
-                            <div id="photoGalleryPreview" class="grid grid-cols-4 md:grid-cols-6 gap-2 mt-4"></div>
+                            <div id="photoPreviewContainer" class="grid grid-cols-4 md:grid-cols-6 gap-2 mt-4"></div>
                             <small id="photoCount" class="text-xs text-[var(--text-muted)] block mt-2">0 / 25 fotos</small>
                         </div>
                         <div>
@@ -1564,18 +1564,43 @@
                 const garages = parseInt(document.getElementById('propGarages').value) || 0;
                 const surfTotal = parseFloat(document.getElementById('propSurfaceTotal').value) || 0;
                 const surfCovered = parseFloat(document.getElementById('propSurfaceCovered').value) || 0;
-                const imgUrl = document.getElementById('propImageUrl').value.trim();
                 const desc = document.getElementById('propDesc').value.trim();
                 const ownerName = document.getElementById('propOwnerName').value.trim() || 'Desconocido';
                 const ownerContact = document.getElementById('propOwnerContact').value.trim() || 'N/C';
+                
+                // Nuevos campos
+                const code = document.getElementById('propCode')?.value.trim() || '';
+                const status = document.getElementById('propStatus')?.value || 'Activo';
+                const antiquity = document.getElementById('propAntiquity')?.value.trim() || '';
+                const floor = document.getElementById('propFloor')?.value.trim() || '';
+                const unit = document.getElementById('propUnit')?.value.trim() || '';
+                const toilets = parseInt(document.getElementById('propToilets')?.value) || 0;
+                const expensasCurrency = document.getElementById('propExpensesCurrency')?.value || 'ARS';
+                const videoUrl = document.getElementById('propVideoUrl')?.value.trim() || '';
+                const internalCommissions = document.getElementById('propInternalCommissions')?.value.trim() || '';
+                const advertisingCost = document.getElementById('propAdvertisingCost')?.value.trim() || '';
+                const privateNotes = document.getElementById('propPrivateNotes')?.value.trim() || '';
+                
+                // Temporada (solo alquiler temporal)
+                const seasonMonths = document.getElementById('propSeasonMonths')?.value || '';
+                const minStay = document.getElementById('propMinStay')?.value || '';
 
                 if (!title || !zone || !price) {
                     alert('Por favor, completa al menos el Título, Zona y Precio.');
                     return;
                 }
+                
+                // Validación de superficies
+                if (surfTotal > 0 && surfCovered > surfTotal) {
+                    alert('La superficie cubierta no puede ser mayor que la total.');
+                    return;
+                }
 
-                // Imagen predeterminada según tipo si está vacía
-                let finalImg = imgUrl;
+                // Obtener fotos cargadas
+                const photos = VALORA.logic.getPhotoUrls();
+                
+                // Imagen predeterminada según tipo si no hay fotos cargadas
+                let finalImg = photos.length > 0 ? photos[0] : '';
                 if (!finalImg) {
                     if (type === 'Casa') finalImg = 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=600&fit=crop';
                     else if (type === 'PH') finalImg = 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=600&fit=crop';
@@ -1585,26 +1610,38 @@
 
                 const newProp = {
                     id: 'p' + (Date.now()),
+                    code,
                     title,
                     operation: op,
                     type,
                     price,
                     currency,
                     expenses,
+                    expensesCurrency: expensasCurrency,
                     zone,
                     address,
                     rooms,
                     bedrooms: beds,
                     bathrooms: baths,
+                    toilets,
                     garages,
                     surfaceTotal: surfTotal,
                     surfaceCovered: surfCovered,
-                    images: [finalImg],
+                    antiquity,
+                    floor,
+                    unit,
+                    images: photos.length > 0 ? photos : [finalImg],
+                    videoUrl,
                     description: desc,
                     ownerName,
                     ownerContact,
-                    status: 'Activo',
+                    status,
                     featured: false,
+                    internalCommissions,
+                    advertisingCost,
+                    privateNotes,
+                    seasonMonths,
+                    minStay,
                     diffusion: { zonaprop: true, argenprop: true, mercadolibre: true, web: true }
                 };
 
@@ -1612,12 +1649,11 @@
                 VALORA.controller.saveDatabaseToLocalStorage();
                 VALORA.view.closeModal('modalProperty');
                 
+                // Limpiar formulario y fotos
+                VALORA.logic.clearPhotos();
+                
                 // Si estamos en la página de propiedades, recargar
-                if (VALORA.activePage === 'propiedades') {
-                    VALORA.controller.goTo('propiedades');
-                } else {
-                    VALORA.controller.goTo('propiedades');
-                }
+                VALORA.controller.goTo('propiedades');
             },
 
             saveClient() {
@@ -2089,6 +2125,9 @@
                     reader.onload = (e) => {
                         this.photoPreviewUrls.push(e.target.result);
                         this.renderPhotoPreviews();
+                        // Actualizar contador
+                        const countEl = document.getElementById('photoCount');
+                        if (countEl) countEl.textContent = `${this.photoPreviewUrls.length} / ${maxPhotos} fotos`;
                     };
                     reader.readAsDataURL(file);
                 });
@@ -2100,20 +2139,24 @@
                 const container = document.getElementById('photoPreviewContainer');
                 if (!container) return;
                 
+                // Actualizar contador siempre
+                const countEl = document.getElementById('photoCount');
+                if (countEl) countEl.textContent = `${this.photoPreviewUrls.length} / 25 fotos`;
+                
                 if (this.photoPreviewUrls.length === 0) {
-                    container.innerHTML = '<p class="text-sm text-gray-400 italic">Sin fotos cargadas</p>';
+                    container.innerHTML = '<p class="text-sm text-gray-400 italic col-span-full">Sin fotos cargadas</p>';
                     return;
                 }
                 
                 container.innerHTML = this.photoPreviewUrls.map((url, idx) => `
-                    <div class="relative group flex-shrink-0 w-32 h-32 rounded-lg overflow-hidden border border-[var(--border)]">
+                    <div class="relative group flex-shrink-0 w-full aspect-square rounded-lg overflow-hidden border border-[var(--border)]">
                         <img src="${url}" class="w-full h-full object-cover" alt="Foto ${idx + 1}">
                         <button type="button" onclick="VALORA.logic.removePhoto(${idx})" 
-                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                class="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
                             <i class="fas fa-times text-xs"></i>
                         </button>
-                        <div class="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-xs py-1 text-center">
-                            ${idx === 0 ? '★ Portada' : idx + 1}
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs py-1 px-2 text-center font-medium">
+                            ${idx === 0 ? '★ PORTADA' : '#' + (idx + 1)}
                         </div>
                     </div>
                 `).join('');
